@@ -204,27 +204,84 @@ def diagnosis(input_pengguna, kb=None):
     }
 
 
+def daftar_pertanyaan(kb):
+    """Susun pertanyaan gejala dari basis pengetahuan: [(bagian, [(kode, nama), ...]), ...].
+
+    Hanya gejala yang dipakai minimal satu aturan yang ditanyakan. Urutan bagian mengikuti
+    kb["urutan_bagian"]; bagian baru yang belum terdaftar tetap ditanyakan, di bagian akhir.
+    Web juga bisa memakai fungsi ini untuk menyusun form.
+    """
+    dipakai = {p for r in kb["aturan"] for p in r["jika"]}
+    gejala = [(k, g) for k, g in kb["gejala"].items() if k in dipakai]
+    urutan = list(kb.get("urutan_bagian") or [])
+    urutan += sorted({g["bagian"] for _, g in gejala} - set(urutan))
+    hasil = []
+    for bagian in urutan:
+        daftar = [(k, g["nama"]) for k, g in gejala if g["bagian"] == bagian]
+        if daftar:
+            hasil.append((bagian, daftar))
+    return hasil
+
+
+def pilihan_bawaan(kb):
+    """Indeks skala yang bernilai 0 ("Tidak tahu"), dipakai saat pengguna menekan Enter."""
+    skala = kb["skala_cf_pengguna"]
+    return next((i for i, s in enumerate(skala) if s["nilai"] == 0), 0)
+
+
+def periksa_kb(kb):
+    """Cari ketidaksesuaian di basis pengetahuan. Mengembalikan daftar masalah (kosong = aman)."""
+    masalah = []
+    dikenal = set(kb["gejala"]) | set(kb["penyakit"]) | set(kb.get("fakta_antara", {}))
+    kode_aturan = [r["kode"] for r in kb["aturan"]]
+    for kode in {k for k in kode_aturan if kode_aturan.count(k) > 1}:
+        masalah.append(f"Kode aturan {kode} dipakai lebih dari sekali")
+    for r in kb["aturan"]:
+        for p in r["jika"] + [r["maka"]]:
+            if p not in dikenal:
+                masalah.append(f"{r['kode']}: kode {p} tidak ada di gejala, penyakit, atau fakta antara")
+        if not -1 <= r["cf"] <= 1:
+            masalah.append(f"{r['kode']}: CF pakar {r['cf']} di luar -1..1")
+    dipakai = {p for r in kb["aturan"] for p in r["jika"]}
+    for k, g in kb["gejala"].items():
+        if not g.get("nama") or not g.get("bagian"):
+            masalah.append(f"{k}: nama atau bagian kosong")
+        if k not in dipakai:
+            masalah.append(f"{k}: tidak dipakai aturan mana pun, jadi tidak ditanyakan")
+    dihasilkan = {r["maka"] for r in kb["aturan"]}
+    for k in kb["penyakit"]:
+        if k not in dihasilkan:
+            masalah.append(f"{k}: tidak ada aturan yang menyimpulkan penyakit ini")
+    terdaftar = set(kb.get("urutan_bagian") or [])
+    for b in sorted({g["bagian"] for g in kb["gejala"].values()} - terdaftar):
+        masalah.append(f"Bagian '{b}' belum ada di urutan_bagian (tetap ditanyakan, di akhir)")
+    if not any(s["nilai"] == 0 for s in kb["skala_cf_pengguna"]):
+        masalah.append("Skala CF pengguna tidak punya pilihan bernilai 0 (Tidak tahu)")
+    return masalah
+
+
 def kumpulkan_jawaban(kb):
     """Tanyakan setiap gejala di terminal. Mengembalikan {kode_gejala: cf_pengguna}."""
     skala = kb["skala_cf_pengguna"]
+    bawaan = pilihan_bawaan(kb)
     print("=== Sistem Pakar Diagnosis Penyakit Tanaman Kopi ===")
     print("Pilih tingkat keyakinan untuk setiap gejala:")
     for i, s in enumerate(skala):
         print(f"  {i} = {s['label']}")
-    print("Tekan Enter untuk 'Tidak tahu'.\n")
+    print(f"Tekan Enter untuk '{skala[bawaan]['label']}'.\n")
 
     jawaban = {}
-    urutan = kb.get("urutan_bagian") or sorted({g["bagian"] for g in kb["gejala"].values()})
-    for bagian in urutan:
-        daftar = [(k, g) for k, g in kb["gejala"].items() if g["bagian"] == bagian]
-        if not daftar:
-            continue
+    for bagian, daftar in daftar_pertanyaan(kb):
         print(f"--- {bagian} ---")
-        for kode, g in daftar:
+        for kode, nama in daftar:
             while True:
-                isi = input(f"{kode} {g['nama']}? ").strip()
+                try:
+                    isi = input(f"{kode} {nama}? ").strip()
+                except EOFError:
+                    print(f"\nMasukan berakhir, gejala sisanya dianggap '{skala[bawaan]['label']}'.")
+                    return jawaban
                 if isi == "":
-                    isi = "0"
+                    isi = str(bawaan)
                 if isi.isdigit() and int(isi) < len(skala):
                     break
                 print(f"  Masukkan angka 0-{len(skala) - 1}.")

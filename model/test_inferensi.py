@@ -1,8 +1,13 @@
 """Uji mesin Forward Chaining + CF. Angka harapan dihitung manual (lihat komentar)."""
 
+import contextlib
+import copy
+import io
 import unittest
+from unittest import mock
 
-from inferensi import diagnosis, gabung_cf, muat_kb
+from inferensi import (daftar_pertanyaan, diagnosis, gabung_cf, kumpulkan_jawaban, muat_kb,
+                       periksa_kb)
 
 KB = muat_kb()
 
@@ -110,6 +115,40 @@ class TestDiagnosis(unittest.TestCase):
             diagnosis({"G99": 0.8}, KB)
         with self.assertRaises(ValueError):
             diagnosis({"G01": 1.5}, KB)
+
+
+class TestPertanyaan(unittest.TestCase):
+    """Pertanyaan harus selalu mengikuti isi basis pengetahuan, walaupun datanya berubah."""
+
+    def test_kb_sekarang_tanpa_masalah(self):
+        self.assertEqual(periksa_kb(KB), [])
+
+    def test_semua_gejala_ditanyakan_urut_bagian(self):
+        daftar = daftar_pertanyaan(KB)
+        self.assertEqual([b for b, _ in daftar], KB["urutan_bagian"])
+        self.assertEqual(sorted(k for _, d in daftar for k, _ in d), sorted(KB["gejala"]))
+
+    def test_kb_berubah_bagian_baru_dan_gejala_tak_terpakai(self):
+        kb = copy.deepcopy(KB)
+        kb["gejala"]["G22"] = {"nama": "Pucuk mengering", "bagian": "Pucuk"}
+        kb["gejala"]["G23"] = {"nama": "Gejala tanpa aturan", "bagian": "Daun"}
+        kb["aturan"].append({"kode": "R28", "jika": ["G22"], "maka": "P04", "cf": 0.4, "status": "usulan"})
+        daftar = dict(daftar_pertanyaan(kb))
+        self.assertEqual(daftar["Pucuk"], [("G22", "Pucuk mengering")])   # bagian baru tetap ditanya
+        self.assertNotIn("G23", [k for k, _ in daftar["Daun"]])           # tidak dipakai aturan
+        masalah = "\n".join(periksa_kb(kb))
+        self.assertIn("Bagian 'Pucuk'", masalah)
+        self.assertIn("G23: tidak dipakai", masalah)
+
+    def test_enter_memakai_pilihan_bernilai_nol(self):
+        kb = copy.deepcopy(KB)
+        kb["skala_cf_pengguna"].reverse()   # "Tidak tahu" kini di urutan terakhir
+        jumlah = sum(len(d) for _, d in daftar_pertanyaan(kb))
+        jawaban_pengguna = ["0"] + [""] * (jumlah - 1)   # gejala pertama "Pasti", sisanya Enter
+        with mock.patch("builtins.input", side_effect=jawaban_pengguna), \
+             contextlib.redirect_stdout(io.StringIO()):
+            jawaban = kumpulkan_jawaban(kb)
+        self.assertEqual(jawaban, {"G01": 1.0})
 
 
 if __name__ == "__main__":

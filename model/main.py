@@ -6,8 +6,10 @@
     python main.py bandingkan                        # tanya-jawab, hasil CF dan DS berdampingan
     python main.py tes                               # unit test
     python main.py blackbox                          # skenario uji black box dari spesifikasi
-    python main.py evaluasi                          # akurasi terhadap data/kasus_uji.csv
+    python main.py praproses                         # data mentah -> data/bersih/kasus_literatur.csv
+    python main.py evaluasi                          # akurasi terhadap kasus pakar + kasus literatur
     python main.py kb                                # lihat isi basis pengetahuan
+    python main.py cek                               # periksa kesesuaian basis pengetahuan dan pemetaan
 """
 
 import argparse
@@ -16,27 +18,26 @@ import sys
 import unittest
 
 from dempster_shafer import diagnosis_ds
-from evaluasi import evaluasi, urai_gejala
-from inferensi import diagnosis, kumpulkan_jawaban, muat_kb, tampilkan_hasil
+from evaluasi import diagnosis_teratas, evaluasi, urai_gejala
+from inferensi import daftar_pertanyaan, diagnosis, kumpulkan_jawaban, muat_kb, periksa_kb, tampilkan_hasil
+from praproses import cetak as cetak_praproses
+from praproses import praproses
 
 FOLDER = os.path.dirname(os.path.abspath(__file__))
 METODE = {"cf": ("Certainty Factor", diagnosis), "ds": ("Dempster-Shafer", diagnosis_ds)}
 
-# Skenario docs/specification.md bagian B5: (nama, masukan, kode teratas yang diharapkan,
-# persen yang diharapkan untuk CF, harus ada saran fakta antara)
+# Skenario docs/specification.md bagian B5: (nama, masukan, diagnosis teratas yang diharapkan
+# ("-" = tidak ada yang tampil, "P05/P06/P07" = seri), persen yang diharapkan untuk CF,
+# harus ada saran fakta antara untuk CF)
 SKENARIO = [
-    ("Semua gejala 'Tidak tahu'", {}, None, None, False),
+    ("Semua gejala 'Tidak tahu'", {}, "-", None, False),
     ("Satu gejala (G01 hampir pasti)", {"G01": 0.8}, "P01", 64.0, False),
     ("Karat daun G01=0,8 G02=0,6 G03=0,4", {"G01": 0.8, "G02": 0.6, "G03": 0.4}, "P01", 80.65, False),
     ("CF negatif: G04 pasti, G05 hampir pasti", {"G04": 1.0, "G05": 0.8}, "P02", 70.59, False),
-    ("Hanya G08", {"G08": 1.0}, None, None, False),
-    ("G12 + G13 (saran periksa akar)", {"G12": 0.8, "G13": 0.8}, None, None, True),
+    ("Hanya G08", {"G08": 1.0}, "-", None, False),
+    ("G12 + G13 (saran periksa akar)", {"G12": 0.8, "G13": 0.8}, "P05/P06/P07", None, True),
     ("G12 + G13 + G16 (jamur akar putih)", {"G12": 0.8, "G13": 0.8, "G16": 0.8}, "P07", None, True),
 ]
-
-
-def teratas(out):
-    return next((h for h in out["hasil"] if h["tampil"]), None)
 
 
 def ringkas(out):
@@ -62,13 +63,11 @@ def jalankan_diagnosis(metode="cf", gejala=None):
 
 
 def bandingkan_hasil(jawaban, kb):
-    for kode in METODE:
-        nama, fungsi = METODE[kode]
-        tampilkan_hasil(fungsi(jawaban, kb), f"Hasil diagnosis ({nama})")
+    hasil = {nama: fungsi(jawaban, kb) for nama, fungsi in METODE.values()}
+    for nama, out in hasil.items():
+        tampilkan_hasil(out, f"Hasil diagnosis ({nama})")
     print("\n=== Perbandingan ===")
-    for kode in METODE:
-        nama, fungsi = METODE[kode]
-        out = fungsi(jawaban, kb)
+    for nama, out in hasil.items():
         print(f"{nama:17}: {ringkas(out)}  ({out['waktu_ms']} ms)")
 
 
@@ -84,23 +83,54 @@ def jalankan_blackbox():
     print(f"{'Skenario':42} {'Metode':6} {'Hasil':48} Status")
     print("-" * 106)
     for nama, masukan, kode, persen, saran in SKENARIO:
+        asing = [g for g in masukan if g not in kb["gejala"]]
+        if asing:
+            # basis pengetahuan berubah: skenario ini tidak lagi berlaku
+            print(f"{nama:42} {'-':6} {'gejala ' + ', '.join(asing) + ' tidak ada di KB':48} LEWAT")
+            continue
         for metode, (_, fungsi) in METODE.items():
             out = fungsi(masukan, kb)
-            atas = teratas(out)
-            ok = (atas["kode"] if atas else None) == kode
+            sistem, persen_sistem, _ = diagnosis_teratas(out)
+            ok = sistem == kode
             # angka persen dari spesifikasi hanya berlaku untuk CF; saran F01 hanya ada di CF
             if metode == "cf":
-                ok = ok and (persen is None or atas["persen"] == persen)
+                ok = ok and (persen is None or persen_sistem == persen)
                 ok = ok and bool(out["fakta_antara"]) == saran
-            if kode is None and masukan.get("G12"):
-                # P05/P06/P07 seri: cukup pastikan ketiganya sama
-                nilai = {h["cf"] for h in out["hasil"] if h["kode"] in ("P05", "P06", "P07")}
-                ok = len(nilai) == 1 and (metode == "ds" or bool(out["fakta_antara"]))
             lulus_semua &= ok
             teks = ringkas(out) + (" + saran F01" if out["fakta_antara"] else "")
             print(f"{nama:42} {metode.upper():6} {teks[:48]:48} {'LULUS' if ok else 'GAGAL'}")
     print("\nSemua skenario lulus." if lulus_semua else "\nAda skenario yang GAGAL.")
     return lulus_semua
+
+
+def jalankan_praproses(*path):
+    hasil, ditolak = praproses(*path)
+    cetak_praproses(hasil, ditolak, *path[1:2])
+
+
+def cek_data():
+    """Periksa basis pengetahuan dan tabel pemetaan. True kalau tidak ada masalah."""
+    from praproses import gejala_tanpa_pola, muat_pemetaan
+
+    kb = muat_kb()
+    masalah = periksa_kb(kb)
+    try:
+        belum = gejala_tanpa_pola(kb, muat_pemetaan(kb)[1])
+        masalah += [f"{k}: belum punya pola di pemetaan/gejala.csv" for k in belum]
+    except (OSError, ValueError) as e:
+        masalah.append(f"Pemetaan: {e}")
+    jumlah = sum(len(d) for _, d in daftar_pertanyaan(kb))
+    print(f"Basis pengetahuan: {len(kb['penyakit'])} penyakit, {len(kb['gejala'])} gejala, "
+          f"{len(kb['aturan'])} aturan; {jumlah} gejala ditanyakan")
+    for bagian, daftar in daftar_pertanyaan(kb):
+        print(f"  {bagian}: {', '.join(k for k, _ in daftar)}")
+    if masalah:
+        print("\nMasalah:")
+        for m in masalah:
+            print(f"  - {m}")
+    else:
+        print("\nTidak ada masalah.")
+    return not masalah
 
 
 def lihat_kb():
@@ -128,8 +158,10 @@ def menu():
         "4": ("Diagnosis cepat (ketik kode gejala)", diagnosis_cepat),
         "5": ("Jalankan unit test", jalankan_tes),
         "6": ("Uji black box", jalankan_blackbox),
-        "7": ("Evaluasi akurasi", evaluasi),
-        "8": ("Lihat basis pengetahuan", lihat_kb),
+        "7": ("Praproses data mentah", jalankan_praproses),
+        "8": ("Evaluasi akurasi", evaluasi),
+        "9": ("Lihat basis pengetahuan", lihat_kb),
+        "10": ("Periksa kesesuaian data", cek_data),
     }
     while True:
         print("\n=== Sistem Pakar Diagnosis Penyakit Tanaman Kopi ===")
@@ -167,10 +199,14 @@ def main(argv=None):
     sub.add_parser("bandingkan", help="tanya-jawab, hasil CF dan DS berdampingan")
     sub.add_parser("tes", help="jalankan unit test")
     sub.add_parser("blackbox", help="skenario uji black box")
+    p = sub.add_parser("praproses", help="saring data mentah menjadi kasus uji")
+    p.add_argument("mentah", nargs="?", help="path CSV data mentah")
+    p.add_argument("bersih", nargs="?", help="path CSV hasil")
     p = sub.add_parser("evaluasi", help="akurasi terhadap kasus uji")
-    p.add_argument("kasus", nargs="?", help="path kasus_uji.csv")
+    p.add_argument("kasus", nargs="?", help="path satu file kasus (bawaan: kasus pakar + kasus literatur)")
     p.add_argument("hasil", nargs="?", help="path hasil_evaluasi.csv")
     sub.add_parser("kb", help="lihat isi basis pengetahuan")
+    sub.add_parser("cek", help="periksa kesesuaian basis pengetahuan dan pemetaan")
     args = parser.parse_args(argv)
 
     if args.perintah == "diagnosis":
@@ -181,10 +217,14 @@ def main(argv=None):
         return 0 if jalankan_tes() else 1
     elif args.perintah == "blackbox":
         return 0 if jalankan_blackbox() else 1
+    elif args.perintah == "praproses":
+        jalankan_praproses(*[x for x in (args.mentah, args.bersih) if x])
     elif args.perintah == "evaluasi":
         evaluasi(*[x for x in (args.kasus, args.hasil) if x])
     elif args.perintah == "kb":
         lihat_kb()
+    elif args.perintah == "cek":
+        return 0 if cek_data() else 1
     else:
         menu()
     return 0

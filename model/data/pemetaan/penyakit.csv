@@ -1,0 +1,16 @@
+label_sumber,kode,catatan
+Rust,P01,Hemileia vastatrix = karat daun
+Coffee leaf rust,P01,Hemileia vastatrix = karat daun
+Cercospora brown eye spot,P02,Cercospora coffeicola = bercak daun
+Cercospora,P02,Cercospora coffeicola = bercak daun
+Nematode,P03,Pratylenchus / Radopholus
+Pink disease,P04,Corticium salmonicolor = jamur upas
+Brown root rot,P05,Phellinus noxius = jamur akar coklat
+Black root rot,P06,Rosellinia = jamur akar hitam
+White root rot,P07,Rigidoporus = jamur akar putih
+Damping off,P08,Rhizoctonia solani = rebah batang
+Healthy,-,Tanaman sehat: sistem harus tidak menampilkan penyakit
+Phoma,,Luar cakupan: tidak ada di basis pengetahuan
+Leaf miner,,Luar cakupan: hama Leucoptera coffeella tidak ada di basis pengetahuan
+Red spider mite,,Luar cakupan: hama tidak ada di basis pengetahuan
+Berry blotch,,"Luar cakupan: kemungkinan Cercospora pada buah, tetapi tidak ada gejala buah P02 di basis pengetahuan; perlu dicek"

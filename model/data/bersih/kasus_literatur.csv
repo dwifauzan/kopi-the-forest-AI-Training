@@ -1,0 +1,4 @@
+kode,gejala,diagnosis_pakar,sumber,catatan
+L01,G01=1; G02=1; G03=1,P01,coffee_kb_1; coffee_kb_2,"Rust. 'yellow to orange powdery lesions on the lower surfaces, with spots merging into larger brown' -> G01; 'defoliation' -> G02; 'bare branch' -> G03. Sumber: LeafNet dataset (enalis/LeafNet, CC-BY-4.0), expert-reviewed symptom description"
+L02,G04=1,P02,coffee_kb_5; coffee_kb_6,"Cercospora brown eye spot. 'spots surrounded by yellow halo' -> G04. Sumber: LeafNet dataset (enalis/LeafNet, CC-BY-4.0), expert-reviewed symptom description"
+L03,,-,coffee_kb_11,Healthy. tanpa gejala. Sumber: Class label of the training photos (no description available)

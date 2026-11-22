@@ -1,0 +1,22 @@
+pola,kode_gejala,catatan
+yellow[^.]*?(lesion|spot|patch)[^.]*?brown,G01,Bercak kuning lalu berubah coklat
+defoliation|leaf (drop|fall)|leaves (drop|fall),G02,Daun gugur
+bare branch|leafless,G03,Pohon gundul
+(spot|lesion)s? surrounded by (a )?yellow halo,G04,Bercak dikelilingi lingkaran kuning
+(leaves|leaf) (turn|turning|become) brown|brown leaves,G05,Daun berwarna coklat (aturan negatif untuk P02; jangan cocokkan dengan 'brown lesions')
+stunt,G06,Tanaman kerdil
+(few|reduced|poor) flower,G07,Bunga sedikit
+premature (ripening|ripen)|ripen(s|ing)? prematurely,G08,Buah matang sebelum waktunya
+(feeder|fibrous) roots? (rot|decay)|root rot,G09,Akar serabut membusuk
+(thin )?(fungal|mycelial) threads? on (the )?(branch|twig),G10,Benang jamur pada cabang/ranting
+(twig|branch) (necrosis|dieback)|dieback,G11,Ranting nekrosis
+(yellowish[- ]green|chlorotic) leaves|leaf chlorosis,G12,Daun hijau kekuningan
+(wilt|droop),G13,"Daun kusam, layu, menggantung"
+brown (mycelium|mycelial)[^.]*root|root[^.]*soil crust,G14,Kerak tanah dan benang jamur coklat di akar
+black (dots|spots|points)[^.]*(collar|stem base|wood),G15,Titik hitam di pangkal batang
+white (mycelium|mycelial|threads?)[^.]*root,G16,Benang jamur putih di akar
+(bruise|water-soaked) (lesion|spot)s?[^.]*(collar|stem base),G17,Bercak memar pada pangkal batang
+(stem base|collar) (rot|rots|rotting),G18,Pangkal batang busuk
+constrict|girdl,G19,Batang berlekuk
+black (spot|lesion)s? on (green|unripe) (berr|cherr),G20,Bercak hitam pada buah hijau
+white spores? (on|covering) (the )?(berr|cherr|fruit),G21,Buah tertutup spora putih

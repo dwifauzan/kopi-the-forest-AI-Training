@@ -30,9 +30,11 @@
 |---|---|---|
 | `basis_pengetahuan.json` | 9 penyakit (P01–P09), 21 gejala (G01–G21), 27 aturan (R01–R26 dari sumber, R27 usulan), 1 fakta antara (F01), skala CF pengguna, ambang tampil 0,2 | Selesai, menunggu validasi pakar |
 | `inferensi.py` | Mesin Forward Chaining dan CF, mode tanya-jawab di terminal | Selesai |
-| `test_inferensi.py` | 13 uji yang dicocokkan dengan hitungan manual | Semua lulus |
+| `test_inferensi.py` | 13 uji yang dicocokkan dengan hitungan manual | Semua lulus (total 31 uji di semua file) |
 | `dempster_shafer.py`, `test_dempster_shafer.py` | A2: pembanding Dempster-Shafer, 7 uji | Selesai, semua lulus |
-| `evaluasi.py`, `data/kasus_uji.csv` | A3: skrip evaluasi; CSV masih berisi baris `CONTOH_HAPUS` | Skrip selesai, menunggu kasus uji dari pakar |
+| `evaluasi.py`, `test_evaluasi.py` | A3: evaluasi CF vs DS per sumber kasus, penanganan hasil seri | Selesai; `data/kasus_uji.csv` (pakar) masih kosong |
+| `praproses.py`, `test_praproses.py`, `data/mentah/`, `data/pemetaan/`, `data/bersih/` | Praproses data literatur LeafNet: 12 baris mentah → 3 kasus (L01–L03), 7 ditolak | Selesai; kasus literatur bukan pengganti kasus pakar |
+| `main.py` | Pintu masuk tunggal semua fitur | Selesai |
 
 **Spreadsheet basis pengetahuan** (7 sheet: Penyakit, Gejala, Aturan, Skala CF, Kasus Uji, Hasil Evaluasi, Sumber): https://claude.ai/artifact/Xg9FEWpRszRmJX9Ds9wXMS
 Isinya sama dengan `basis_pengetahuan.json`. Kalau salah satunya diubah, yang lain harus ikut diubah.
