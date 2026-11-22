@@ -1,7 +1,7 @@
 Kode kasus,Diagnosis pakar,Diagnosis sistem (kode),CF sistem (%),Cocok?,Waktu respons (ms),Metode,Sumber data
-L01,P01,P01,95.2,TRUE,0.076,CF,kasus_literatur
-L02,P02,P02,80.0,TRUE,0.024,CF,kasus_literatur
-L03,-,-,,TRUE,0.009,CF,kasus_literatur
-L01,P01,P01,92.13,TRUE,0.102,DS,kasus_literatur
-L02,P02,P02,82.22,TRUE,0.037,DS,kasus_literatur
+L01,P01,P01,95.2,TRUE,0.053,CF,kasus_literatur
+L02,P02,P02,80.0,TRUE,0.027,CF,kasus_literatur
+L03,-,-,,TRUE,0.011,CF,kasus_literatur
+L01,P01,P01,92.13,TRUE,0.074,DS,kasus_literatur
+L02,P02,P02,82.22,TRUE,0.034,DS,kasus_literatur
 L03,-,-,,TRUE,0.001,DS,kasus_literatur

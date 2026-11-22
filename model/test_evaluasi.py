@@ -38,15 +38,17 @@ class TestEvaluasi(unittest.TestCase):
         cf = baris[0]
         self.assertEqual(cf[2], "P05/P06/P07")
         self.assertEqual(cf[4], "FALSE")
-        self.assertEqual(ringkasan[("CF", "pakar")][:3], [0, 1, 1])
+        r = ringkasan[("CF", "pakar")]
+        self.assertEqual((r["benar"], r["dilabel"], r["seri"]), (0, 1, 1))
         self.assertIn("seri", teks)
 
     def test_ringkasan_per_sumber(self):
         pakar = self.tulis("kasus_uji.csv", 'K01,"G01=0.8",P01\n')
         literatur = self.tulis("kasus_literatur.csv", 'L01,"G04=1",P02\nL02,,-\n')
         _, ringkasan, teks = self.jalankan(pakar, literatur)
-        self.assertEqual(ringkasan[("CF", "kasus_uji")][:2], [1, 1])
-        self.assertEqual(ringkasan[("CF", "kasus_literatur")][:2], [2, 2])
+        self.assertEqual(ringkasan[("CF", "kasus_uji")]["benar"], 1)
+        self.assertEqual(ringkasan[("CF", "kasus_literatur")]["benar"], 2)
+        self.assertEqual(ringkasan[("CF", "kasus_literatur")]["dilabel"], 2)
         self.assertIn("kesesuaian literatur", teks)
 
     def test_peringatan_kasus_ganda_dan_kode_asing(self):

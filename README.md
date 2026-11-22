@@ -2,17 +2,30 @@
 
 Forward Chaining + Certainty Factor, ditulis dari nol dengan Python standar (tanpa library tambahan). Dempster-Shafer dipakai sebagai metode pembanding. Spesifikasi lengkap ada di [`docs/specification.md`](docs/specification.md).
 
+## Peta modul (`model/`)
+
+```
+main.py              pintu masuk: menu + perintah CLI, hanya merangkai modul lain
+ ├─ terminal.py      tanya-jawab gejala dan cetak hasil (print/input hanya ada di sini)
+ ├─ inferensi.py     OTAK: basis pengetahuan + Forward Chaining + Certainty Factor
+ ├─ dempster_shafer.py  pembanding DS, keluaran sama dengan inferensi.diagnosis()
+ ├─ praproses.py     data mentah literatur -> kasus uji (data/bersih/)
+ └─ evaluasi.py      jalankan CF dan DS pada kasus uji -> data/hasil_evaluasi.csv
+basis_pengetahuan.json  satu-satunya sumber gejala, penyakit, aturan, skala CF
+```
+
+Urutan membaca untuk reviewer: docstring modul `inferensi.py` (bagian 1–3), lalu `diagnosis()`, `forward_chaining()`, dan `dempster_shafer.diagnosis_ds()`. Setiap fungsi punya docstring yang menjelaskan tugasnya, parameter, nilai kembalian, dan error yang mungkin muncul.
+
 ## File
 
 - `basis_pengetahuan.json`: 9 penyakit, 21 gejala, 27 aturan, 1 fakta antara, skala CF pengguna, dan ambang tampil. Data awal dari Tabel 4.1 skripsi Gatra Lanuari (UNEJ, 2017). R27 berstatus *usulan* dan belum divalidasi pakar. Isinya harus sama dengan [spreadsheet basis pengetahuan](https://claude.ai/artifact/Xg9FEWpRszRmJX9Ds9wXMS).
-- `inferensi.py`: mesin inferensi. Fungsi utama `diagnosis({kode_gejala: cf_pengguna})`.
-- `dempster_shafer.py`: pembanding Dempster-Shafer. Fungsi `diagnosis_ds()` menerima masukan dan mengembalikan bentuk keluaran yang sama.
+- `inferensi.py`: mesin inferensi. Fungsi utama `diagnosis({kode_gejala: cf_pengguna})`. Juga berisi `daftar_pertanyaan()` (bisa dipakai web untuk form) dan `periksa_kb()`.
+- `dempster_shafer.py`: pembanding Dempster-Shafer. `diagnosis_ds()` menerima masukan dan mengembalikan bentuk keluaran yang sama.
+- `terminal.py`: tampilan terminal (tanya-jawab dan cetak hasil). Tidak dipakai web.
 - `praproses.py`: menyaring data mentah menjadi kasus uji siap pakai.
-- `main.py`: pintu masuk tunggal (menu dan perintah) untuk semua fitur di bawah.
-- `evaluasi.py`: menghitung akurasi kedua metode dari kasus pakar (`data/kasus_uji.csv`) dan kasus literatur (`data/bersih/kasus_literatur.csv`), dilaporkan terpisah per sumber. Diagnosis yang seri ditulis `P05/P06/P07` dan dihitung tidak cocok. Hasilnya ditulis ke `data/hasil_evaluasi.csv`.
-- `test_inferensi.py`, `test_dempster_shafer.py`: 20 uji yang dicocokkan dengan hitungan manual.
-- `test_praproses.py`, `test_evaluasi.py`: 11 uji praproses dan evaluasi. Harapannya diambil dari isi data mentah.
-- `test_inferensi.py` juga memuat 4 uji yang memastikan pertanyaan gejala selalu mengikuti isi basis pengetahuan.
+- `evaluasi.py`: menghitung akurasi kedua metode dari kasus pakar (`data/kasus_uji.csv`) dan kasus literatur (`data/bersih/kasus_literatur.csv`), dilaporkan terpisah per sumber. Diagnosis yang seri ditulis `P05/P06/P07` dan dihitung tidak cocok.
+- `main.py`: pintu masuk tunggal (menu dan perintah) untuk semua fitur.
+- `test_*.py`: 35 uji. Angka CF/DS dicocokkan dengan hitungan manual; uji praproses mengikuti isi data mentah.
 
 ## Cara menjalankan
 

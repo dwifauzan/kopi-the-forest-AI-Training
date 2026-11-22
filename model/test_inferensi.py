@@ -6,8 +6,8 @@ import io
 import unittest
 from unittest import mock
 
-from inferensi import (daftar_pertanyaan, diagnosis, gabung_cf, kumpulkan_jawaban, muat_kb,
-                       periksa_kb)
+from inferensi import daftar_pertanyaan, diagnosis, gabung_cf, muat_kb, periksa_kb
+from terminal import kumpulkan_jawaban
 
 KB = muat_kb()
 
