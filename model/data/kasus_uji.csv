@@ -1,0 +1,3 @@
+kode,gejala,diagnosis_pakar
+CONTOH_HAPUS_1,"G01=0.8; G02=0.6",CONTOH_HAPUS
+CONTOH_HAPUS_2,"G12=0.8; G13=0.8; G16=0.8",CONTOH_HAPUS

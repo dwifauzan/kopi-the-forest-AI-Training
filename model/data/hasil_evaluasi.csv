@@ -1,0 +1,5 @@
+Kode kasus,Diagnosis pakar,Diagnosis sistem (kode),CF sistem (%),Cocok?,Waktu respons (ms),Metode
+CONTOH_HAPUS_1,CONTOH_HAPUS,P01,76.96,,0.065,CF
+CONTOH_HAPUS_2,CONTOH_HAPUS,P07,93.26,,0.069,CF
+CONTOH_HAPUS_1,CONTOH_HAPUS,P01,73.04,,0.075,DS
+CONTOH_HAPUS_2,CONTOH_HAPUS,P07,74.5,,0.073,DS

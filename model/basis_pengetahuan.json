@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "judul": "Basis Pengetahuan Sistem Pakar Diagnosis Penyakit Tanaman Kopi",
+    "sumber": "Gatra Lanuari (2017). Penerapan Sistem Pakar untuk Penentuan Penyakit Tanaman Kopi Menggunakan Metode Certainty Factor (Studi Kasus: Puslitkoka Jember). Skripsi, Universitas Jember. Tabel 4.1 (relasi gejala dan CF pakar), subbab 2.2.2 (penanganan).",
+    "catatan": "Kode P, G, R, dan F adalah penomoran kelompok, bukan kode dari skripsi. Isi file ini harus sama dengan spreadsheet basis pengetahuan (https://claude.ai/artifact/Xg9FEWpRszRmJX9Ds9wXMS).",
+    "validasi_pakar": "TODO(pakar): isi nama, instansi, dan tanggal validasi"
+  },
+  "skala_cf_pengguna": [
+    {"label": "Tidak tahu", "nilai": 0.0, "arti": "Gejala diabaikan (tidak masuk perhitungan)"},
+    {"label": "Mungkin", "nilai": 0.4, "arti": "Pengguna ragu gejala ini ada"},
+    {"label": "Kemungkinan besar", "nilai": 0.6, "arti": "Gejala cukup jelas terlihat"},
+    {"label": "Hampir pasti", "nilai": 0.8, "arti": "Gejala jelas, hampir yakin"},
+    {"label": "Pasti", "nilai": 1.0, "arti": "Gejala terlihat jelas dan yakin"}
+  ],
+  "ambang_tampil": 0.2,
+  "penyakit": {
+    "P01": {
+      "nama": "Karat daun kopi",
+      "penyebab": "Hemileia vastatrix",
+      "solusi": "Pemupukan berimbang, pemangkasan, dan pengaturan naungan agar kelembapan turun. Gunakan varietas tahan/toleran.",
+      "sumber": "Gatra (2017), subbab 2.2.2"
+    },
+    "P02": {
+      "nama": "Bercak daun kopi",
+      "penyebab": "Cercospora coffeicola",
+      "solusi": "Sanitasi kebun, benamkan bagian tanaman yang sakit. Kurangi kelembapan (pangkas, atur naungan, buat parit drainase). Pemupukan. Hindari bibit yang sudah terserang.",
+      "sumber": "Gatra (2017), subbab 2.2.2"
+    },
+    "P03": {
+      "nama": "Nematoda",
+      "penyebab": "Pratylenchus coffeae dan Radopholus similis",
+      "solusi": "Pupuk kandang 12 kg/pohon/tahun. Bongkar pohon terserang berat. Buat parit isolasi di sekitar tanaman sakit. Gunakan batang bawah tahan (ekselsa atau robusta klon BP 961).",
+      "sumber": "Gatra (2017), subbab 2.2.2"
+    },
+    "P04": {
+      "nama": "Jamur upas",
+      "penyebab": "Corticium salmonicolor",
+      "solusi": "Pangkas cabang sakit sampai 10 cm di bawah bagian sakit, kumpulkan dan bakar. Petik dan musnahkan buah sakit. Pangkas pohon pelindung untuk menurunkan kelembapan.",
+      "sumber": "Gatra (2017), subbab 2.2.2"
+    },
+    "P05": {
+      "nama": "Jamur akar coklat",
+      "penyebab": "Phellinus noxius",
+      "solusi": "Bongkar pohon terserang sampai akarnya lalu bakar. Biarkan lubang terbuka sekitar 1 tahun. Taburkan Trichoderma 200 g/pohon dan pupuk organik pada pohon sehat di sekitarnya, ulangi tiap 6 bulan. Gunakan varietas tahan.",
+      "sumber": "Gatra (2017); nama spesies dari literatur lain, perlu dicek"
+    },
+    "P06": {
+      "nama": "Jamur akar hitam",
+      "penyebab": "Rosellinia sp.",
+      "solusi": "Sama dengan jamur akar coklat: bongkar pohon terserang sampai akarnya lalu bakar. Biarkan lubang terbuka sekitar 1 tahun. Taburkan Trichoderma 200 g/pohon dan pupuk organik pada pohon sehat di sekitarnya, ulangi tiap 6 bulan. Gunakan varietas tahan.",
+      "sumber": "Gatra (2017); nama spesies dari literatur lain, perlu dicek"
+    },
+    "P07": {
+      "nama": "Jamur akar putih",
+      "penyebab": "Rigidoporus sp.",
+      "solusi": "Sama dengan jamur akar coklat: bongkar pohon terserang sampai akarnya lalu bakar. Biarkan lubang terbuka sekitar 1 tahun. Taburkan Trichoderma 200 g/pohon dan pupuk organik pada pohon sehat di sekitarnya, ulangi tiap 6 bulan. Gunakan varietas tahan.",
+      "sumber": "Gatra (2017); nama spesies dari literatur lain, perlu dicek"
+    },
+    "P08": {
+      "nama": "Rebah batang kopi",
+      "penyebab": "Rhizoctonia solani",
+      "solusi": "Kurangi kelembapan pembibitan (benih tidak terlalu rapat, cukup cahaya, siram secukupnya). Pakai tanah pembibitan bebas R. solani. Semprot fungisida sesuai anjuran (mis. mankozeb 0,2%). Fumigasi media bila perlu.",
+      "sumber": "Gatra (2017), subbab 2.2.2"
+    },
+    "P09": {
+      "nama": "Busuk buah kopi",
+      "penyebab": "Fusarium sp.",
+      "solusi": "Kendalikan hama PBKo (petik bubuk tiap bulan, racutan akhir panen, ambil buah lelesan, Beauveria bassiana, perangkap feromon). Sanitasi dan pangkas tanaman tidak produktif. Fungisida berbahan tembaga atau metalaksil.",
+      "sumber": "Gatra (2017), subbab 2.2.2"
+    }
+  },
+  "gejala": {
+    "G01": {"nama": "Daun timbul bercak kuning, lalu berubah coklat", "bagian": "Daun"},
+    "G02": {"nama": "Daun gugur", "bagian": "Daun"},
+    "G03": {"nama": "Pohon gundul", "bagian": "Tajuk"},
+    "G04": {"nama": "Bercak kuning pada daun dikelilingi lingkaran kuning", "bagian": "Daun"},
+    "G05": {"nama": "Daun berwarna coklat", "bagian": "Daun"},
+    "G06": {"nama": "Tanaman terlihat kerdil", "bagian": "Tajuk"},
+    "G07": {"nama": "Bunga sedikit", "bagian": "Bunga/buah"},
+    "G08": {"nama": "Buah matang sebelum waktunya (prematur)", "bagian": "Bunga/buah"},
+    "G09": {"nama": "Akar serabut membusuk", "bagian": "Akar"},
+    "G10": {"nama": "Ada benang-benang jamur tipis pada cabang/ranting", "bagian": "Batang/cabang"},
+    "G11": {"nama": "Ranting mengalami nekrosis (mati jaringan)", "bagian": "Batang/cabang"},
+    "G12": {"nama": "Warna daun hijau kekuningan", "bagian": "Daun"},
+    "G13": {"nama": "Daun kusam, layu, dan menggantung", "bagian": "Daun"},
+    "G14": {"nama": "Akar tertutup kerak tanah dan tampak anyaman benang jamur coklat", "bagian": "Akar"},
+    "G15": {"nama": "Ada titik-titik hitam di pangkal batang dan permukaan kayu", "bagian": "Akar"},
+    "G16": {"nama": "Benang jamur putih menjalar di sepanjang permukaan akar", "bagian": "Akar"},
+    "G17": {"nama": "Bercak memar pada pangkal batang", "bagian": "Batang/cabang"},
+    "G18": {"nama": "Pangkal batang busuk lalu mengering", "bagian": "Batang/cabang"},
+    "G19": {"nama": "Batang tampak berlekuk", "bagian": "Batang/cabang"},
+    "G20": {"nama": "Bercak hitam pada buah yang masih hijau", "bagian": "Bunga/buah"},
+    "G21": {"nama": "Permukaan buah tertutup spora putih", "bagian": "Bunga/buah"}
+  },
+  "urutan_bagian": ["Daun", "Tajuk", "Batang/cabang", "Akar", "Bunga/buah"],
+  "fakta_antara": {
+    "F01": {
+      "nama": "Gangguan sistem perakaran",
+      "saran": "Gejala daun ini sama untuk jamur akar coklat, hitam, dan putih. Periksa akar dan pangkal batang: apakah akar tertutup kerak tanah dengan anyaman benang jamur coklat, ada titik-titik hitam di pangkal batang, atau ada benang jamur putih di permukaan akar? Tambahkan gejala tersebut agar penyakitnya bisa dibedakan."
+    }
+  },
+  "aturan": [
+    {"kode": "R01", "jika": ["G01"], "maka": "P01", "cf": 0.8, "status": "sumber", "catatan": ""},
+    {"kode": "R02", "jika": ["G02"], "maka": "P01", "cf": 0.6, "status": "sumber", "catatan": "G02 juga dipakai R07 (nematoda)"},
+    {"kode": "R03", "jika": ["G03"], "maka": "P01", "cf": 0.4, "status": "sumber", "catatan": ""},
+    {"kode": "R04", "jika": ["G04"], "maka": "P02", "cf": 0.8, "status": "sumber", "catatan": ""},
+    {"kode": "R05", "jika": ["G05"], "maka": "P02", "cf": -0.4, "status": "sumber", "catatan": "CF negatif: gejala ini menurunkan keyakinan"},
+    {"kode": "R06", "jika": ["G06"], "maka": "P03", "cf": 0.4, "status": "sumber", "catatan": ""},
+    {"kode": "R07", "jika": ["G02"], "maka": "P03", "cf": 0.6, "status": "sumber", "catatan": "G02 juga dipakai R02 (karat daun)"},
+    {"kode": "R08", "jika": ["G07"], "maka": "P03", "cf": 0.2, "status": "sumber", "catatan": ""},
+    {"kode": "R09", "jika": ["G08"], "maka": "P03", "cf": -0.6, "status": "sumber", "catatan": "CF negatif: gejala ini menurunkan keyakinan"},
+    {"kode": "R10", "jika": ["G09"], "maka": "P03", "cf": 0.6, "status": "sumber", "catatan": ""},
+    {"kode": "R11", "jika": ["G10"], "maka": "P04", "cf": 0.8, "status": "sumber", "catatan": ""},
+    {"kode": "R12", "jika": ["G11"], "maka": "P04", "cf": 0.4, "status": "sumber", "catatan": ""},
+    {"kode": "R13", "jika": ["G12"], "maka": "P05", "cf": 0.6, "status": "sumber", "catatan": "G12 sama untuk P05, P06, P07"},
+    {"kode": "R14", "jika": ["G13"], "maka": "P05", "cf": 0.8, "status": "sumber", "catatan": "G13 sama untuk P05, P06, P07"},
+    {"kode": "R15", "jika": ["G14"], "maka": "P05", "cf": 1.0, "status": "sumber", "catatan": "Gejala pembeda jamur akar coklat"},
+    {"kode": "R16", "jika": ["G12"], "maka": "P06", "cf": 0.6, "status": "sumber", "catatan": ""},
+    {"kode": "R17", "jika": ["G13"], "maka": "P06", "cf": 0.8, "status": "sumber", "catatan": ""},
+    {"kode": "R18", "jika": ["G15"], "maka": "P06", "cf": 0.8, "status": "sumber", "catatan": "Gejala pembeda jamur akar hitam"},
+    {"kode": "R19", "jika": ["G12"], "maka": "P07", "cf": 0.6, "status": "sumber", "catatan": ""},
+    {"kode": "R20", "jika": ["G13"], "maka": "P07", "cf": 0.8, "status": "sumber", "catatan": ""},
+    {"kode": "R21", "jika": ["G16"], "maka": "P07", "cf": 0.8, "status": "sumber", "catatan": "Gejala pembeda jamur akar putih"},
+    {"kode": "R22", "jika": ["G17"], "maka": "P08", "cf": 1.0, "status": "sumber", "catatan": ""},
+    {"kode": "R23", "jika": ["G18"], "maka": "P08", "cf": 0.8, "status": "sumber", "catatan": ""},
+    {"kode": "R24", "jika": ["G19"], "maka": "P08", "cf": 1.0, "status": "sumber", "catatan": ""},
+    {"kode": "R25", "jika": ["G20"], "maka": "P09", "cf": 0.6, "status": "sumber", "catatan": ""},
+    {"kode": "R26", "jika": ["G21"], "maka": "P09", "cf": 0.6, "status": "sumber", "catatan": ""},
+    {"kode": "R27", "jika": ["G12", "G13"], "maka": "F01", "cf": 0.8, "status": "usulan", "catatan": "TODO(pakar): CF 0,8 belum dinilai pakar. Usulan kelompok: P05/P06/P07 seri bila hanya G12+G13, sistem lalu menyarankan pemeriksaan akar (G14/G15/G16)."}
+  ]
+}
