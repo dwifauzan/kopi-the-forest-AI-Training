@@ -7,6 +7,7 @@ Keluaran: data/hasil_evaluasi.csv, kolomnya sama dengan sheet Hasil Evaluasi + k
 """
 
 import csv
+import re
 import os
 import sys
 
@@ -24,9 +25,12 @@ KOLOM = ["Kode kasus", "Diagnosis pakar", "Diagnosis sistem (kode)", "CF sistem 
 
 
 def urai_gejala(teks):
-    """'G01=0.8; G02=0.6' -> {'G01': 0.8, 'G02': 0.6}"""
+    """'G01=0.8; G02=0.6' -> {'G01': 0.8, 'G02': 0.6}
+
+    Pemisah antargejala ';' (atau ',' sebelum kode G), jadi desimal koma '0,8' tetap bisa.
+    """
     hasil = {}
-    for bagian in teks.replace(",", ";").split(";"):
+    for bagian in re.split(r";|,(?=\s*[Gg]\d)", teks):
         bagian = bagian.strip()
         if not bagian:
             continue
