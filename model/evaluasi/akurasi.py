@@ -15,24 +15,22 @@ Aturan penilaian:
 - Akurasi dilaporkan terpisah per sumber. Untuk sumber literatur disebut
   "kesesuaian literatur", bukan akurasi lapangan.
 
-    python evaluasi.py [path_kasus.csv] [path_hasil.csv]
+    python main.py evaluasi [path_kasus.csv] [path_hasil.csv]
 """
 
 import csv
 import os
-import re
-import sys
 
-from dempster_shafer import diagnosis_ds
-from inferensi import diagnosis, muat_kb
+from persiapan_data.berkas_csv import baca_csv, kolom_csv
+from persiapan_data.lokasi import HASIL_EVALUASI, KASUS_LITERATUR, KASUS_UJI
+from sistem_pakar import METODE as SEMUA_METODE
+from sistem_pakar import muat_kb, urai_gejala
+from sistem_pakar.kontrak import diagnosis_teratas
 
-FOLDER = os.path.dirname(os.path.abspath(__file__))
-KASUS_UJI = os.path.join(FOLDER, "data", "kasus_uji.csv")
-KASUS_LITERATUR = os.path.join(FOLDER, "data", "bersih", "kasus_literatur.csv")
 SUMBER_KASUS = [KASUS_UJI, KASUS_LITERATUR]
-HASIL = os.path.join(FOLDER, "data", "hasil_evaluasi.csv")
+HASIL = HASIL_EVALUASI
 
-METODE = [("CF", diagnosis), ("DS", diagnosis_ds)]
+METODE = [(kode.upper(), fungsi) for kode, (_, fungsi) in SEMUA_METODE.items()]
 KOLOM_HASIL = ["Kode kasus", "Diagnosis pakar", "Diagnosis sistem (kode)", "CF sistem (%)",
                "Cocok?", "Waktu respons (ms)", "Metode", "Sumber data"]
 KOLOM_WAJIB = ["kode", "gejala", "diagnosis_pakar"]
@@ -40,45 +38,17 @@ SUMBER_LITERATUR = os.path.splitext(os.path.basename(KASUS_LITERATUR))[0]
 PENANDA_CONTOH = "CONTOH_HAPUS"   # baris contoh dari spesifikasi A3, tidak ikut dihitung
 
 
-def urai_gejala(teks):
-    """Ubah teks gejala menjadi dict masukan diagnosis.
-
-    Format yang diterima:
-        "G01=0.8; G02=0.6"   (pemisah titik koma)
-        "G01=0,8; G02=0,6"   (desimal koma, gaya Indonesia)
-        "G01=0.8, G02=0.6"   (pemisah koma, asalkan diikuti kode G)
-
-    Mengembalikan:
-        {"G01": 0.8, "G02": 0.6}. Teks kosong -> {}.
-
-    Error:
-        ValueError kalau ada bagian yang nilainya bukan angka.
-    """
-    hasil = {}
-    for bagian in re.split(r";|,(?=\s*[Gg]\d)", teks or ""):
-        bagian = bagian.strip()
-        if not bagian:
-            continue
-        kode, _, nilai = bagian.partition("=")
-        try:
-            hasil[kode.strip().upper()] = float(nilai.strip().replace(",", "."))
-        except ValueError:
-            raise ValueError(f"Format gejala salah: '{bagian}' (contoh benar: G01=0.8)") from None
-    return hasil
-
-
 def baca_kasus(path):
     """Baca satu file kasus. Setiap baris diberi kunci "_sumber" (nama file tanpa ekstensi).
 
-    Baris tanpa kode diabaikan (misalnya baris kosong dari sheet).
+    Baris tanpa kode diabaikan (misalnya baris kosong dari sheet). Pemisah ";" dari Excel dikenali.
 
     Error:
         ValueError kalau kolom wajib tidak ada.
     """
     sumber = os.path.splitext(os.path.basename(path))[0]
-    with open(path, encoding="utf-8-sig", newline="") as f:
-        baris = list(csv.DictReader(f))
-    hilang = [k for k in KOLOM_WAJIB if baris and k not in baris[0]]
+    baris = baca_csv(path)
+    hilang = [k for k in KOLOM_WAJIB if k not in kolom_csv(path)]
     if hilang:
         raise ValueError(f"{path}: kolom wajib tidak ada: {', '.join(hilang)}")
     return [{**b, "_sumber": sumber} for b in baris if (b.get("kode") or "").strip()]
@@ -88,22 +58,6 @@ def berlabel(kasus):
     """True kalau kasus punya diagnosis rujukan dan bukan baris contoh."""
     rujukan = (kasus.get("diagnosis_pakar") or "").strip()
     return bool(rujukan) and PENANDA_CONTOH not in rujukan and PENANDA_CONTOH not in kasus["kode"]
-
-
-def diagnosis_teratas(out):
-    """Ambil diagnosis sistem dari keluaran diagnosis()/diagnosis_ds().
-
-    Mengembalikan:
-        (kode, persen, seri)
-        - kode  : "P01", atau "P05/P06/P07" kalau seri, atau "-" kalau tidak ada yang tampil
-        - persen: persen penyakit teratas, "" kalau tidak ada
-        - seri  : True kalau lebih dari satu penyakit di puncak
-    """
-    tampil = [h for h in out["hasil"] if h["tampil"]]
-    if not tampil:
-        return "-", "", False
-    puncak = [h["kode"] for h in tampil if h["cf"] == tampil[0]["cf"]]
-    return "/".join(puncak), tampil[0]["persen"], len(puncak) > 1
 
 
 def periksa_kasus(daftar_kasus, kb):
@@ -214,7 +168,3 @@ def cetak(baris_hasil, ringkasan, daftar_kasus, path_hasil, peringatan=()):
     if not daftar_kasus:
         print("Belum ada kasus. Isi data/kasus_uji.csv dari sheet Kasus Uji atau jalankan praproses.py.")
     print(f"Hasil ditulis ke {path_hasil}")
-
-
-if __name__ == "__main__":
-    evaluasi(*sys.argv[1:3])

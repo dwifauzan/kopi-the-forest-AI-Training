@@ -13,13 +13,12 @@ Istilah:
 - Θ (theta)       : himpunan semua penyakit (P01..P09), artinya "belum tahu yang mana"
 - himpunan fokus  : himpunan penyakit yang mendapat massa, misalnya {P05,P06,P07}
 - K               : massa yang jatuh ke irisan kosong (bukti saling bertentangan)
-
-Jalankan `python dempster_shafer.py` untuk mode tanya-jawab di terminal.
 """
 
 import time
 
-from inferensi import angka, buat_keluaran, muat_kb, periksa_masukan, susun_hasil, teks_fakta_awal
+from .basis_pengetahuan import muat_kb
+from .kontrak import angka, buat_keluaran, periksa_masukan, susun_hasil, teks_fakta_awal
 
 
 def teks_himpunan(himpunan, theta):
@@ -184,9 +183,3 @@ def diagnosis_ds(input_pengguna, kb=None):
         jejak.append(f"Hasil {h['kode']} {h['nama']}: BetP = {angka(h['cf'])} ({h['persen']}%)")
 
     return buat_keluaran(hasil, [], jejak, dipakai, mulai, himpunan_terkuat=himpunan_terkuat(m, theta))
-
-
-if __name__ == "__main__":
-    from terminal import tanya_jawab
-
-    tanya_jawab(diagnosis_ds)

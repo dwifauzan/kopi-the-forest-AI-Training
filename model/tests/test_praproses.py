@@ -4,8 +4,8 @@ import os
 import tempfile
 import unittest
 
-from inferensi import muat_kb
-from praproses import cari_gejala, muat_pemetaan, praproses
+from persiapan_data.praproses import cari_gejala, muat_pemetaan, praproses
+from sistem_pakar import muat_kb, urai_gejala
 
 KB = muat_kb()
 
@@ -40,7 +40,6 @@ class TestPraproses(unittest.TestCase):
         self.assertEqual(luar, {"Leaf miner", "Phoma", "Red spider mite", "Berry blotch"})
 
     def test_hasil_bisa_dibaca_mesin_inferensi(self):
-        from evaluasi import urai_gejala
         for k in self.hasil:
             self.assertTrue(set(urai_gejala(k["gejala"])) <= set(KB["gejala"]))
 

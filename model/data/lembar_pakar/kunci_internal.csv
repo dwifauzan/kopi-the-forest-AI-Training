@@ -1,0 +1,40 @@
+kode,jenis,dibentuk_dari,gejala
+K01,lemah,P04,G11=0.4
+K02,sebagian,P02,G04=0.6
+K03,sebagian,P04,G10=0.6
+K04,campuran,P04+P05,G10=0.6; G14=0.6
+K05,sebagian,P03,G02=0.6
+K06,lemah,P05,G12=0.4
+K07,campuran,P01+P06,G01=0.6; G13=0.6
+K08,khas,P03,G02=0.8; G06=0.8; G09=0.8; G07=0.8
+K09,acak,-,G12=0.8; G11=0.8; G14=0.8
+K10,acak,-,G20=0.8; G21=0.6
+K11,sebagian,P09,G20=0.6
+K12,lemah,P01,G03=0.4
+K13,lemah,P08,G18=0.4
+K14,negatif,P03,G02=0.8; G08=0.8
+K15,khas,P04,G10=0.8; G11=0.8
+K16,khas,P01,G01=0.8; G02=0.8; G03=0.8
+K17,khas,P09,G20=0.8; G21=0.8
+K18,negatif,P02,G04=0.8; G05=0.8
+K19,lemah,P03,G07=0.4
+K20,acak,-,G06=0.4; G14=0.8; G08=0.4
+K21,campuran,P07+P08,G13=0.6; G17=0.6
+K22,gabungan,F01,G12=0.8; G13=0.8
+K23,acak,-,G04=0.8; G17=0.8; G16=0.4
+K24,sebagian,P06,G13=0.6
+K25,sebagian,P05,G14=0.6
+K26,khas,P02,G04=0.8
+K27,khas,P06,G12=0.8; G13=0.8; G15=0.8
+K28,khas,P07,G12=0.8; G13=0.8; G16=0.8
+K29,khas,P08,G17=0.8; G18=0.8; G19=0.8
+K30,campuran,P02+P06,G04=0.6; G13=0.6
+K31,khas,P05,G12=0.8; G13=0.8; G14=0.8
+K32,lemah,P02,G04=0.4
+K33,campuran,P02+P03,G02=0.6; G04=0.6
+K34,campuran,P03+P06,G02=0.6; G13=0.6
+K35,acak,-,G05=0.4; G11=0.6
+K36,lemah,P09,G21=0.4
+K37,sebagian,P01,G01=0.6
+K38,sebagian,P08,G17=0.6
+K39,acak,-,G03=0.6; G17=0.6; G19=0.6

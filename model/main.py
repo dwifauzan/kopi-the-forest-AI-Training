@@ -9,9 +9,15 @@
     python main.py evaluasi [kasus.csv] [hasil.csv]
     python main.py kb                                # lihat isi basis pengetahuan
     python main.py cek                               # periksa basis pengetahuan dan pemetaan
+    python main.py lembar [--timpa]                  # buat lembar kasus buta untuk pakar
+    python main.py impor-pakar LEMBAR.csv            # salin hasil isian pakar ke data/kasus_uji.csv
 
-Modul ini hanya merangkai fungsi dari modul lain; logikanya ada di:
-    inferensi.py (CF), dempster_shafer.py (DS), evaluasi.py, praproses.py, terminal.py
+Modul ini hanya merangkai fungsi dari folder lain; logikanya ada di:
+    sistem_pakar/    basis pengetahuan, CF, DS (yang dipakai web)
+    antarmuka/       mode terminal
+    persiapan_data/  praproses literatur dan lembar pakar
+    evaluasi/        akurasi dan uji black box
+    tests/           unit test
 """
 
 import argparse
@@ -19,40 +25,23 @@ import os
 import sys
 import unittest
 
-from dempster_shafer import diagnosis_ds
-from evaluasi import diagnosis_teratas, evaluasi, urai_gejala
-from inferensi import daftar_pertanyaan, diagnosis, muat_kb, periksa_kb
-from praproses import cetak as cetak_praproses
-from praproses import gejala_tanpa_pola, praproses
-from terminal import kumpulkan_jawaban, tampilkan_hasil
+from antarmuka.terminal import kumpulkan_jawaban, tampilkan_hasil
+from evaluasi.akurasi import evaluasi
+from evaluasi.black_box import jalankan_blackbox
+from persiapan_data.lembar_pakar import NAMA_LEMBAR, buat_lembar, cetak_impor, cetak_lembar, impor_lembar
+from persiapan_data.lokasi import FOLDER_LEMBAR
+from persiapan_data.praproses import cetak as cetak_praproses
+from persiapan_data.praproses import gejala_tanpa_pola, praproses
+from sistem_pakar import METODE, daftar_pertanyaan, muat_kb, periksa_kb, urai_gejala
+from sistem_pakar.kontrak import ringkas_hasil
 
 FOLDER = os.path.dirname(os.path.abspath(__file__))
-METODE = {"cf": ("Certainty Factor", diagnosis), "ds": ("Dempster-Shafer", diagnosis_ds)}
-
-# Skenario uji black box (docs/specification.md bagian B5). Per baris:
-#   (nama, masukan, diagnosis teratas yang diharapkan, persen yang diharapkan untuk CF,
-#    apakah CF harus memberi saran fakta antara)
-# Diagnosis "-" = tidak ada yang tampil; "P05/P06/P07" = seri.
-SKENARIO = [
-    ("Semua gejala 'Tidak tahu'", {}, "-", None, False),
-    ("Satu gejala (G01 hampir pasti)", {"G01": 0.8}, "P01", 64.0, False),
-    ("Karat daun G01=0,8 G02=0,6 G03=0,4", {"G01": 0.8, "G02": 0.6, "G03": 0.4}, "P01", 80.65, False),
-    ("CF negatif: G04 pasti, G05 hampir pasti", {"G04": 1.0, "G05": 0.8}, "P02", 70.59, False),
-    ("Hanya G08", {"G08": 1.0}, "-", None, False),
-    ("G12 + G13 (saran periksa akar)", {"G12": 0.8, "G13": 0.8}, "P05/P06/P07", None, True),
-    ("G12 + G13 + G16 (jamur akar putih)", {"G12": 0.8, "G13": 0.8, "G16": 0.8}, "P07", None, True),
-]
+FOLDER_TES = os.path.join(FOLDER, "tests")
 
 
 # ---------------------------------------------------------------------------
 # Diagnosis
 # ---------------------------------------------------------------------------
-
-def ringkas(out):
-    """Maksimal tiga penyakit teratas yang tampil, misalnya "P01 80.65%, P03 36.0%"."""
-    tampil = [f"{h['kode']} {h['persen']}%" for h in out["hasil"] if h["tampil"]][:3]
-    return ", ".join(tampil) or "tidak ada yang tampil"
-
 
 def jalankan_diagnosis(metode="cf", gejala=None):
     """Diagnosis dari terminal.
@@ -81,7 +70,7 @@ def jalankan_diagnosis(metode="cf", gejala=None):
     if len(hasil) > 1:
         print("\n=== Perbandingan ===")
         for nama, out in hasil.items():
-            print(f"{nama:17}: {ringkas(out)}  ({out['waktu_ms']} ms)")
+            print(f"{nama:17}: {ringkas_hasil(out)}  ({out['waktu_ms']} ms)")
 
 
 def diagnosis_cepat():
@@ -99,39 +88,9 @@ def diagnosis_cepat():
 # ---------------------------------------------------------------------------
 
 def jalankan_tes():
-    """Jalankan semua file test_*.py. Mengembalikan True kalau semua lulus."""
-    suite = unittest.defaultTestLoader.discover(FOLDER, pattern="test_*.py")
+    """Jalankan semua file tests/test_*.py. Mengembalikan True kalau semua lulus."""
+    suite = unittest.defaultTestLoader.discover(FOLDER_TES, pattern="test_*.py", top_level_dir=FOLDER)
     return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
-
-
-def jalankan_blackbox():
-    """Jalankan SKENARIO dengan CF dan DS, cetak LULUS/GAGAL. Mengembalikan True kalau semua lulus.
-
-    Angka persen dan saran fakta antara hanya dicek untuk CF, karena angka di spesifikasi
-    adalah angka CF. Skenario yang memakai gejala yang sudah tidak ada di basis
-    pengetahuan ditandai LEWAT.
-    """
-    kb = muat_kb()
-    lulus_semua = True
-    print(f"{'Skenario':42} {'Metode':6} {'Hasil':48} Status")
-    print("-" * 106)
-    for nama, masukan, harapan, persen, saran in SKENARIO:
-        asing = [g for g in masukan if g not in kb["gejala"]]
-        if asing:
-            print(f"{nama:42} {'-':6} {'gejala ' + ', '.join(asing) + ' tidak ada di KB':48} LEWAT")
-            continue
-        for metode, (_, fungsi) in METODE.items():
-            out = fungsi(masukan, kb)
-            sistem, persen_sistem, _ = diagnosis_teratas(out)
-            ok = sistem == harapan
-            if metode == "cf":
-                ok = ok and (persen is None or persen_sistem == persen)
-                ok = ok and bool(out["fakta_antara"]) == saran
-            lulus_semua &= ok
-            teks = ringkas(out) + (" + saran F01" if out["fakta_antara"] else "")
-            print(f"{nama:42} {metode.upper():6} {teks[:48]:48} {'LULUS' if ok else 'GAGAL'}")
-    print("\nSemua skenario lulus." if lulus_semua else "\nAda skenario yang GAGAL.")
-    return lulus_semua
 
 
 def jalankan_praproses(*path):
@@ -156,6 +115,29 @@ def cek_data():
         print(f"  {bagian}: {', '.join(k for k, _ in daftar)}")
     print("\nMasalah:\n" + "\n".join(f"  - {m}" for m in masalah) if masalah else "\nTidak ada masalah.")
     return not masalah
+
+
+def jalankan_lembar(timpa=False):
+    """Buat lembar kasus buta untuk pakar. Mengembalikan False kalau lembar terisi menolak ditimpa."""
+    try:
+        cetak_lembar(buat_lembar(timpa=timpa))
+    except FileExistsError as e:
+        print(e)
+        return False
+
+
+def jalankan_impor(path=None):
+    """Impor lembar yang sudah diisi pakar ke data/kasus_uji.csv. Mengembalikan False kalau gagal."""
+    path = path or os.path.join(FOLDER_LEMBAR, NAMA_LEMBAR)
+    if not os.path.exists(path):
+        print(f"Impor gagal: file tidak ditemukan: {path}. Jalankan 'python main.py lembar' dulu "
+              "atau sebutkan lokasi lembar yang sudah diisi pakar.")
+        return False
+    try:
+        cetak_impor(*impor_lembar(path))
+    except (OSError, ValueError) as e:
+        print(f"Impor gagal: {e}")
+        return False
 
 
 def lihat_kb():
@@ -191,6 +173,8 @@ MENU = [
     ("Evaluasi akurasi", evaluasi),
     ("Lihat basis pengetahuan", lihat_kb),
     ("Periksa kesesuaian data", cek_data),
+    ("Buat lembar kasus buta untuk pakar", jalankan_lembar),
+    ("Impor hasil isian pakar", jalankan_impor),
 ]
 
 
@@ -232,6 +216,10 @@ def buat_parser():
                    help="[kasus.csv] [hasil.csv]; bawaan: kasus pakar + kasus literatur")
     sub.add_parser("kb", help="lihat isi basis pengetahuan")
     sub.add_parser("cek", help="periksa basis pengetahuan dan pemetaan")
+    p = sub.add_parser("lembar", help="buat lembar kasus buta untuk pakar")
+    p.add_argument("--timpa", action="store_true", help="buat ulang walau lembar sudah mulai diisi")
+    p = sub.add_parser("impor-pakar", help="salin hasil isian pakar ke data/kasus_uji.csv")
+    p.add_argument("lembar", nargs="?", help="bawaan: data/lembar_pakar/lembar_pakar.csv")
     return parser
 
 
@@ -252,6 +240,8 @@ def main(argv=None):
         "evaluasi": lambda: evaluasi(*path),
         "kb": lihat_kb,
         "cek": cek_data,
+        "lembar": lambda: jalankan_lembar(args.timpa),
+        "impor-pakar": lambda: jalankan_impor(args.lembar),
     }.get(args.perintah, menu)
     return 1 if perintah() is False else 0
 

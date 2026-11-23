@@ -6,7 +6,8 @@ import os
 import tempfile
 import unittest
 
-from evaluasi import evaluasi, urai_gejala
+from evaluasi.akurasi import evaluasi
+from sistem_pakar import urai_gejala
 
 KOLOM = "kode,gejala,diagnosis_pakar\n"
 

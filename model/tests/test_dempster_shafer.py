@@ -2,8 +2,8 @@
 
 import unittest
 
-from dempster_shafer import diagnosis_ds, fungsi_massa, kombinasi_dempster
-from inferensi import diagnosis, muat_kb
+from sistem_pakar import diagnosis, diagnosis_ds, muat_kb
+from sistem_pakar.dempster_shafer import fungsi_massa, kombinasi_dempster
 
 KB = muat_kb()
 THETA = frozenset(KB["penyakit"])

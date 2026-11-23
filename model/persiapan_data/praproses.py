@@ -14,24 +14,17 @@ Prinsipnya: data mentah tidak pernah diedit, dan kode menyesuaikan dataset.
 - Nama kolom data mentah diatur di KOLOM.
 Kalau dataset bertambah atau berubah, ubah tabel/konstanta itu, bukan logikanya.
 
-    python praproses.py [mentah.csv] [bersih.csv]
+    python main.py praproses [mentah.csv] [bersih.csv]
 """
 
-import csv
-import json
-import os
 import re
-import sys
 
-from inferensi import muat_kb
+from sistem_pakar import muat_kb
 
-FOLDER = os.path.dirname(os.path.abspath(__file__))
-DATA = os.path.join(FOLDER, "data")
-MENTAH = os.path.join(DATA, "mentah", "leafnet_coffee_kb.csv")
-BERSIH = os.path.join(DATA, "bersih", "kasus_literatur.csv")
-DITOLAK = os.path.join(DATA, "bersih", "ditolak.csv")
-PEMETAAN_PENYAKIT = os.path.join(DATA, "pemetaan", "penyakit.csv")
-PEMETAAN_GEJALA = os.path.join(DATA, "pemetaan", "gejala.csv")
+from .berkas_csv import baca_csv, tulis_csv
+from .lokasi import DITOLAK, KASUS_LITERATUR, MENTAH, PEMETAAN_GEJALA, PEMETAAN_PENYAKIT
+
+BERSIH = KASUS_LITERATUR
 
 # Nama kolom di data mentah. Ubah nilai di kanan kalau sumber data memakai nama lain.
 KOLOM = {
@@ -41,12 +34,15 @@ KOLOM = {
     "sumber": "source",       # opsional
     "kategori": "category",   # opsional; kalau tidak ada, semua baris dianggap identifikasi penyakit
 }
+
 KOLOM_OPSIONAL = {"sumber", "kategori"}
+
 KATEGORI_DIPAKAI = {"disease_identification"}
 
 # CF pengguna untuk gejala yang disebut jelas di deskripsi literatur.
 # Konvensi kelompok, bukan nilai dari sumber: sebutkan di laporan.
 CF_LITERATUR = 1.0
+
 AWALAN_KODE = "L"
 
 # Kata penyangkal sebelum frasa gejala di kalimat yang sama ("no spots" bukan gejala).
@@ -54,43 +50,6 @@ PENYANGKAL = re.compile(r"\b(no|not|without|absence of)\b[^.;]{0,40}$", re.I)
 
 KOLOM_BERSIH = ["kode", "gejala", "diagnosis_pakar", "sumber", "catatan"]
 KOLOM_DITOLAK = ["id", "penyakit", "alasan"]
-
-
-# ---------------------------------------------------------------------------
-# Baca/tulis file
-# ---------------------------------------------------------------------------
-
-def baca_csv(path):
-    """Baca CSV menjadi list of dict (header = kunci). Aman untuk file berawalan BOM dari Excel."""
-    with open(path, encoding="utf-8-sig", newline="") as f:
-        return list(csv.DictReader(f))
-
-
-def tulis_csv(path, kolom, baris):
-    """Tulis list of dict ke CSV dengan urutan kolom `kolom`. Folder dibuat kalau belum ada."""
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        tulis = csv.DictWriter(f, fieldnames=kolom)
-        tulis.writeheader()
-        tulis.writerows(baris)
-
-
-def jsonl_ke_csv(path_jsonl, path_csv):
-    """Ubah data mentah JSONL (satu objek JSON per baris) menjadi CSV mentah, isinya tidak diubah.
-
-    Semua kunci yang muncul di baris mana pun menjadi kolom; nilai null ditulis kosong.
-
-    Mengembalikan:
-        jumlah baris yang ditulis.
-    """
-    with open(path_jsonl, encoding="utf-8") as f:
-        baris = [json.loads(l) for l in f if l.strip()]
-    kolom = []
-    for b in baris:
-        kolom += [k for k in b if k not in kolom]
-    tulis_csv(path_csv, kolom, [{k: "" if b.get(k) is None else b[k] for k in kolom} for b in baris])
-    return len(baris)
-
 
 # ---------------------------------------------------------------------------
 # Pemetaan
@@ -158,7 +117,6 @@ def cari_gejala(teks, pola_gejala):
                 ketemu.setdefault(kode, m.group(0))
                 break
     return dict(sorted(ketemu.items()))
-
 
 # ---------------------------------------------------------------------------
 # Praproses
@@ -277,9 +235,3 @@ def cetak(kasus, ditolak, path_bersih=BERSIH, path_ditolak=DITOLAK):
         print(f"\nPeringatan: gejala tanpa pola di pemetaan/gejala.csv, tidak akan terbaca dari teks: "
               f"{', '.join(belum)}")
     print(f"\nDitulis ke {path_bersih}\n       dan {path_ditolak}")
-
-
-if __name__ == "__main__":
-    path = sys.argv[1:3]
-    kasus, ditolak = praproses(*path)
-    cetak(kasus, ditolak, *path[1:2])

@@ -29,12 +29,16 @@
 | File | Isi | Status |
 |---|---|---|
 | `basis_pengetahuan.json` | 9 penyakit (P01–P09), 21 gejala (G01–G21), 27 aturan (R01–R26 dari sumber, R27 usulan), 1 fakta antara (F01), skala CF pengguna, ambang tampil 0,2 | Selesai, menunggu validasi pakar |
-| `inferensi.py` | Mesin Forward Chaining dan CF, mode tanya-jawab di terminal | Selesai |
-| `test_inferensi.py` | 13 uji yang dicocokkan dengan hitungan manual | Semua lulus (total 31 uji di semua file) |
-| `dempster_shafer.py`, `test_dempster_shafer.py` | A2: pembanding Dempster-Shafer, 7 uji | Selesai, semua lulus |
-| `evaluasi.py`, `test_evaluasi.py` | A3: evaluasi CF vs DS per sumber kasus, penanganan hasil seri | Selesai; `data/kasus_uji.csv` (pakar) masih kosong |
-| `praproses.py`, `test_praproses.py`, `data/mentah/`, `data/pemetaan/`, `data/bersih/` | Praproses data literatur LeafNet: 12 baris mentah → 3 kasus (L01–L03), 7 ditolak | Selesai; kasus literatur bukan pengganti kasus pakar |
-| `main.py` | Pintu masuk tunggal semua fitur | Selesai |
+| `sistem_pakar/inferensi.py` | Mesin Forward Chaining dan CF | Selesai |
+| `sistem_pakar/dempster_shafer.py` | A2: pembanding Dempster-Shafer | Selesai |
+| `sistem_pakar/basis_pengetahuan.py`, `sistem_pakar/kontrak.py` | Memuat/memeriksa KB; validasi masukan dan bentuk keluaran bersama | Selesai |
+| `evaluasi/akurasi.py`, `evaluasi/black_box.py` | A3: evaluasi CF vs DS per sumber kasus (hasil seri ditangani); B5: skenario black box | Selesai; `data/kasus_uji.csv` (pakar) masih kosong |
+| `persiapan_data/praproses.py`, `data/mentah/`, `data/pemetaan/`, `data/bersih/` | Praproses data literatur LeafNet: 12 baris mentah → 3 kasus (L01–L03), 7 ditolak | Selesai; kasus literatur bukan pengganti kasus pakar |
+| `persiapan_data/lembar_pakar.py`, `data/lembar_pakar/` | Lembar kasus buta (39 kasus) untuk diisi pakar, lalu diimpor ke `data/kasus_uji.csv` | Selesai; menunggu pertemuan pakar |
+| `antarmuka/terminal.py`, `main.py` | Mode terminal; pintu masuk tunggal semua fitur | Selesai |
+| `tests/` | 44 uji, angka dicocokkan dengan hitungan manual | Semua lulus |
+
+Struktur folder lengkap ada di `README.md` (bagian "Struktur folder"). Daftar tugas di bagian 5 ditulis sebelum struktur ini, jadi nama file di sana adalah nama lama.
 
 **Spreadsheet basis pengetahuan** (7 sheet: Penyakit, Gejala, Aturan, Skala CF, Kasus Uji, Hasil Evaluasi, Sumber): https://claude.ai/artifact/Xg9FEWpRszRmJX9Ds9wXMS
 Isinya sama dengan `basis_pengetahuan.json`. Kalau salah satunya diubah, yang lain harus ikut diubah.
@@ -83,7 +87,7 @@ Masukan G01 = 0,8, G02 = 0,6, G03 = 0,4:
 ## 4. Kontrak fungsi (DIBEKUKAN)
 
 ```python
-from inferensi import diagnosis, muat_kb
+from sistem_pakar import diagnosis, muat_kb      # dulu: from inferensi import ...
 
 kb = muat_kb()                                   # isi basis_pengetahuan.json
 out = diagnosis({"G01": 0.8, "G02": 0.6}, kb)    # {kode_gejala: cf_pengguna}
@@ -130,7 +134,7 @@ Kerjakan berurutan. Bagian A adalah model AI (dikerjakan pemilik repo). Bagian B
   docs/
   ```
 - Buat `requirements.txt` yang hanya berisi `flask` (dan `gunicorn` kalau deploy ke Render).
-- **Selesai jika:** `python -m unittest -v` lulus dan `python inferensi.py` jalan.
+- **Selesai jika:** `python -m unittest -v` lulus dan `python main.py diagnosis` jalan.
 
 #### A2. Dempster-Shafer sebagai pembanding (inovasi)
 Buat `dempster_shafer.py` berisi fungsi `diagnosis_ds(input_pengguna, kb=None)` dengan bentuk keluaran yang sama seperti `diagnosis()`. Pakai `basis_pengetahuan.json` yang sama, tanpa data baru.
@@ -233,9 +237,10 @@ semua gejala "Tidak tahu"; satu gejala; kasus karat daun di bagian 3 (harus 80,6
 ## 7. Cara menjalankan
 
 ```bash
-python inferensi.py            # diagnosis lewat terminal
-python -m unittest -v          # semua tes
-python evaluasi.py             # evaluasi akurasi (setelah A3)
+python main.py                 # menu semua fitur (jalankan dari folder model/)
+python main.py diagnosis       # diagnosis lewat terminal
+python main.py tes             # semua tes (atau python -m unittest -v)
+python main.py evaluasi        # evaluasi akurasi
 flask --app app run --debug    # website lokal (setelah B1)
 ```
 

@@ -1,11 +1,11 @@
 """Tampilan terminal: tanya-jawab gejala dan cetak hasil diagnosis.
 
-Dipisah dari inferensi.py supaya mesin inferensi tidak berisi print/input. Web tidak
-memakai modul ini; web cukup memanggil inferensi.diagnosis() atau
-dempster_shafer.diagnosis_ds().
+Dipisah dari paket sistem_pakar supaya mesin inferensi tidak berisi print/input.
+Web tidak memakai modul ini; web cukup memanggil sistem_pakar.diagnosis() atau
+sistem_pakar.diagnosis_ds().
 """
 
-from inferensi import daftar_pertanyaan, muat_kb
+from sistem_pakar import daftar_pertanyaan, muat_kb
 
 
 def pilihan_bawaan(kb):
@@ -93,7 +93,7 @@ def tanya_jawab(fungsi_diagnosis):
     """Alur lengkap mode terminal: tanya gejala, jalankan diagnosis, cetak hasil.
 
     Parameter:
-        fungsi_diagnosis: inferensi.diagnosis atau dempster_shafer.diagnosis_ds.
+        fungsi_diagnosis: sistem_pakar.diagnosis atau sistem_pakar.diagnosis_ds.
     """
     kb = muat_kb()
     jawaban = kumpulkan_jawaban(kb)
