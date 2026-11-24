@@ -14,7 +14,8 @@ model/
 │   ├── inferensi.py           Forward Chaining + Certainty Factor: diagnosis()
 │   └── dempster_shafer.py     pembanding Dempster-Shafer: diagnosis_ds()
 ├── antarmuka/
-│   └── terminal.py            tanya-jawab gejala dan cetak hasil (print/input hanya di sini)
+│   ├── terminal.py            tanya-jawab gejala dan cetak hasil (print/input hanya di sini)
+│   └── api.py                 API JSON untuk frontend (docs/api.md), tanpa dependency
 ├── persiapan_data/          menyiapkan kasus uji
 │   ├── lokasi.py              semua lokasi file di data/
 │   ├── berkas_csv.py          baca/tulis CSV (aman untuk Excel: BOM dan pemisah ";")
@@ -23,7 +24,7 @@ model/
 ├── evaluasi/
 │   ├── akurasi.py             CF dan DS pada kasus uji -> data/hasil_evaluasi.csv
 │   └── black_box.py           skenario uji black box (spesifikasi B5)
-├── tests/                   44 unit test (test_*.py)
+├── tests/                   54 unit test (test_*.py)
 ├── data/                    data mentah, pemetaan, kasus uji, hasil evaluasi
 └── docs/specification.md
 ```
@@ -38,7 +39,8 @@ Urutan membaca untuk reviewer: `sistem_pakar/__init__.py` (kontrak), lalu `infer
 - `sistem_pakar.diagnosis({kode_gejala: cf_pengguna})`: diagnosis CF. `sistem_pakar.diagnosis_ds()` menerima masukan yang sama dan mengembalikan bentuk keluaran yang sama. `daftar_pertanyaan()` bisa dipakai web untuk menyusun form.
 - `evaluasi/akurasi.py`: akurasi kedua metode dari kasus pakar (`data/kasus_uji.csv`) dan kasus literatur (`data/bersih/kasus_literatur.csv`), dilaporkan terpisah per sumber. Diagnosis yang seri ditulis `P05/P06/P07` dan dihitung tidak cocok.
 - `persiapan_data/lembar_pakar.py`: lembar kasus "buta" (gejala saja, diagnosis kosong, urutan diacak) untuk diisi pakar. Lihat bagian "Mengumpulkan kasus uji dari pakar".
-- `tests/`: 44 uji. Angka CF/DS dicocokkan dengan hitungan manual; uji praproses mengikuti isi data mentah.
+- `antarmuka/api.py`: API JSON untuk frontend Laravel (`python main.py api`). Endpoint, contoh controller Laravel, dan cara deploy ada di [`docs/api.md`](model/docs/api.md).
+- `tests/`: 54 uji. Angka CF/DS dicocokkan dengan hitungan manual; uji praproses mengikuti isi data mentah.
 
 ## Cara menjalankan
 
@@ -58,6 +60,7 @@ python main.py kb                                      # lihat isi basis pengeta
 python main.py cek                                     # periksa kesesuaian basis pengetahuan, pertanyaan, dan pemetaan
 python main.py lembar                                  # buat lembar kasus buta untuk pakar
 python main.py impor-pakar                             # salin isian pakar ke data/kasus_uji.csv
+python main.py api                                     # API JSON untuk frontend di http://127.0.0.1:5001
 ```
 
 Semua perintah dijalankan dari folder `model/`. Unit test juga bisa lewat `python -m unittest -v`.
@@ -118,23 +121,17 @@ Semua file di bawah ada di `model/data/`:
 
 Alurnya `python main.py praproses`, lalu `python main.py evaluasi`. Kalau data mentah bertambah atau berubah, sesuaikan tabel di `pemetaan/` (dan `KOLOM` di `persiapan_data/praproses.py` kalau nama kolomnya berbeda), bukan datanya. CF pengguna untuk kasus literatur ditetapkan 1,0 (`CF_LITERATUR`). Ini konvensi kelompok, bukan nilai dari sumber.
 
-## Memakai di Flask
+## Memakai dari frontend
+
+Frontend (Laravel) memanggil API JSON: jalankan `python main.py api`, lalu ikuti [`docs/api.md`](model/docs/api.md) (endpoint, bentuk respons, contoh controller dan Blade, deploy).
+
+Kalau aplikasi web ditulis dengan Python, paket `sistem_pakar` bisa dipanggil langsung:
 
 ```python
 from sistem_pakar import METODE, daftar_pertanyaan, diagnosis, diagnosis_ds, muat_kb
 
 kb = muat_kb()
-out = diagnosis({"G01": 0.8, "G02": 0.6}, kb)   # atau diagnosis_ds(...)
-out["hasil"]          # daftar penyakit urut CF, dengan persen, solusi, dan tampil
-out["fakta_antara"]   # saran tambahan, misalnya periksa akar
-out["jejak"]          # langkah penalaran untuk fasilitas penjelasan
-out["waktu_ms"]       # untuk evaluasi waktu respons
-kb["gejala"]          # {kode: {nama, bagian}} untuk membuat form
-kb["skala_cf_pengguna"]
-daftar_pertanyaan(kb) # [(bagian, [(kode, nama), ...]), ...] siap untuk form per bagian
-METODE["ds"][1]       # fungsi diagnosis dari teks metode "cf"/"ds" pada form
+out = diagnosis({"G01": 0.8, "G02": 0.6}, kb)   # atau diagnosis_ds(...); bentuk keluaran sama
 ```
 
-Folder `model/` harus ada di `sys.path` (misalnya `app.py` diletakkan di `model/`, atau `sys.path.insert(0, "model")`).
-
-Kode gejala yang tidak dikenal, atau CF di luar 0..1, menghasilkan `ValueError`. Tangkap error ini di rute API dan kembalikan status 400.
+Masukan yang salah (kode gejala tidak dikenal, CF bukan angka atau di luar 0..1) menghasilkan `ValueError` dengan pesan berbahasa Indonesia.

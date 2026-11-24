@@ -53,14 +53,22 @@ def periksa_masukan(input_pengguna, kb):
         {kode_gejala: cf_pengguna} yang CF-nya > 0.
 
     Error:
-        ValueError kalau kode gejala tidak dikenal atau CF di luar 0..1.
+        ValueError kalau masukan bukan dict, kode gejala tidak dikenal, CF bukan angka
+        (angka dalam teks seperti "0.8" diterima), atau CF di luar 0..1.
         Rute web sebaiknya menangkap error ini dan membalas status 400.
     """
+    if input_pengguna is not None and not isinstance(input_pengguna, dict):
+        raise ValueError("Masukan gejala harus berupa {kode_gejala: cf}, misalnya {\"G01\": 0.8}")
     fakta = {}
     for kode, cf in (input_pengguna or {}).items():
         if kode not in kb["gejala"]:
             raise ValueError(f"Kode gejala tidak dikenal: {kode}")
-        cf = float(cf)
+        try:
+            if isinstance(cf, bool):
+                raise TypeError
+            cf = float(cf)
+        except (TypeError, ValueError):
+            raise ValueError(f"CF pengguna untuk {kode} harus angka 0 sampai 1, bukan {cf!r}") from None
         if not 0 <= cf <= 1:
             raise ValueError(f"CF pengguna untuk {kode} harus di antara 0 dan 1, bukan {cf}")
         if cf > 0:

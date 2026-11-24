@@ -11,10 +11,11 @@
     python main.py cek                               # periksa basis pengetahuan dan pemetaan
     python main.py lembar [--timpa]                  # buat lembar kasus buta untuk pakar
     python main.py impor-pakar LEMBAR.csv [--awalan BS]  # salin isian pakar ke data/kasus_uji.csv
+    python main.py api [--host 127.0.0.1] [--port 5001]  # API JSON untuk frontend (docs/api.md)
 
 Modul ini hanya merangkai fungsi dari folder lain; logikanya ada di:
     sistem_pakar/    basis pengetahuan, CF, DS (yang dipakai web)
-    antarmuka/       mode terminal
+    antarmuka/       mode terminal dan API JSON untuk frontend
     persiapan_data/  praproses literatur dan lembar pakar
     evaluasi/        akurasi dan uji black box
     tests/           unit test
@@ -25,6 +26,7 @@ import os
 import sys
 import unittest
 
+from antarmuka.api import jalankan_server
 from antarmuka.terminal import kumpulkan_jawaban, tampilkan_hasil
 from evaluasi.akurasi import evaluasi
 from evaluasi.black_box import jalankan_blackbox
@@ -178,6 +180,7 @@ MENU = [
     ("Periksa kesesuaian data", cek_data),
     ("Buat lembar kasus buta untuk pakar", jalankan_lembar),
     ("Impor hasil isian pakar", jalankan_impor),
+    ("Jalankan API untuk frontend", jalankan_server),
 ]
 
 
@@ -224,6 +227,9 @@ def buat_parser():
     p = sub.add_parser("impor-pakar", help="salin hasil isian pakar ke data/kasus_uji.csv")
     p.add_argument("lembar", nargs="?", help="bawaan: data/lembar_pakar/lembar_pakar.csv")
     p.add_argument("--awalan", help="awalan kode kasus pakar ini, misalnya BS (bawaan: inisial nama pakar)")
+    p = sub.add_parser("api", help="jalankan API JSON untuk frontend (docs/api.md)")
+    p.add_argument("--host", default="127.0.0.1", help="0.0.0.0 supaya bisa diakses dari perangkat lain")
+    p.add_argument("--port", type=int, default=5001)
     return parser
 
 
@@ -246,6 +252,7 @@ def main(argv=None):
         "cek": cek_data,
         "lembar": lambda: jalankan_lembar(args.timpa),
         "impor-pakar": lambda: jalankan_impor(args.lembar, args.awalan),
+        "api": lambda: jalankan_server(args.host, args.port),
     }.get(args.perintah, menu)
     return 1 if perintah() is False else 0
 
