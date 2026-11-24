@@ -10,7 +10,7 @@
     python main.py kb                                # lihat isi basis pengetahuan
     python main.py cek                               # periksa basis pengetahuan dan pemetaan
     python main.py lembar [--timpa]                  # buat lembar kasus buta untuk pakar
-    python main.py impor-pakar LEMBAR.csv            # salin hasil isian pakar ke data/kasus_uji.csv
+    python main.py impor-pakar LEMBAR.csv [--awalan BS]  # salin isian pakar ke data/kasus_uji.csv
 
 Modul ini hanya merangkai fungsi dari folder lain; logikanya ada di:
     sistem_pakar/    basis pengetahuan, CF, DS (yang dipakai web)
@@ -126,15 +126,18 @@ def jalankan_lembar(timpa=False):
         return False
 
 
-def jalankan_impor(path=None):
-    """Impor lembar yang sudah diisi pakar ke data/kasus_uji.csv. Mengembalikan False kalau gagal."""
+def jalankan_impor(path=None, awalan=None):
+    """Impor lembar yang sudah diisi pakar ke data/kasus_uji.csv. Mengembalikan False kalau gagal.
+
+    awalan: awalan kode kasus untuk pakar ini; kosong = dari nama pakar di lembar.
+    """
     path = path or os.path.join(FOLDER_LEMBAR, NAMA_LEMBAR)
     if not os.path.exists(path):
         print(f"Impor gagal: file tidak ditemukan: {path}. Jalankan 'python main.py lembar' dulu "
               "atau sebutkan lokasi lembar yang sudah diisi pakar.")
         return False
     try:
-        cetak_impor(*impor_lembar(path))
+        cetak_impor(*impor_lembar(path, awalan=awalan))
     except (OSError, ValueError) as e:
         print(f"Impor gagal: {e}")
         return False
@@ -220,6 +223,7 @@ def buat_parser():
     p.add_argument("--timpa", action="store_true", help="buat ulang walau lembar sudah mulai diisi")
     p = sub.add_parser("impor-pakar", help="salin hasil isian pakar ke data/kasus_uji.csv")
     p.add_argument("lembar", nargs="?", help="bawaan: data/lembar_pakar/lembar_pakar.csv")
+    p.add_argument("--awalan", help="awalan kode kasus pakar ini, misalnya BS (bawaan: inisial nama pakar)")
     return parser
 
 
@@ -241,7 +245,7 @@ def main(argv=None):
         "kb": lihat_kb,
         "cek": cek_data,
         "lembar": lambda: jalankan_lembar(args.timpa),
-        "impor-pakar": lambda: jalankan_impor(args.lembar),
+        "impor-pakar": lambda: jalankan_impor(args.lembar, args.awalan),
     }.get(args.perintah, menu)
     return 1 if perintah() is False else 0
 

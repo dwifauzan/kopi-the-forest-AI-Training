@@ -83,14 +83,14 @@ class TestLembarPakar(unittest.TestCase):
             "K02": {"diagnosis_pakar": "-", "catatan": "perlu cek akar"},
         })
         ditambah, dilewati, peringatan = impor_lembar(self.lembar, self.kasus, KB)
-        self.assertEqual(ditambah, ["K01", "K02"])
+        self.assertEqual(ditambah, ["PU-K01", "PU-K02"])     # awalan dari inisial "Pakar Uji"
         self.assertEqual(peringatan, [])
         self.assertTrue(all(alasan == "diagnosis pakar belum diisi" for _, alasan in dilewati))
 
         hasil = {b["kode"]: b for b in baca_csv(self.kasus)}
-        self.assertEqual(hasil["K01"]["diagnosis_pakar"], "P04")
-        self.assertEqual(hasil["K02"]["nama_pakar"], "Pakar Uji")      # diisi dari baris pertama
-        self.assertIn("perlu cek akar", hasil["K02"]["catatan"])
+        self.assertEqual(hasil["PU-K01"]["diagnosis_pakar"], "P04")
+        self.assertEqual(hasil["PU-K02"]["nama_pakar"], "Pakar Uji")   # diisi dari baris pertama
+        self.assertIn("perlu cek akar", hasil["PU-K02"]["catatan"])
 
         # impor ulang tidak menggandakan kasus
         ditambah, dilewati, _ = impor_lembar(self.lembar, self.kasus, KB)
@@ -106,8 +106,8 @@ class TestLembarPakar(unittest.TestCase):
             tulis = csv.DictWriter(f, fieldnames=list(baris[0]), delimiter=";", lineterminator="\r\n")
             tulis.writeheader()
             tulis.writerows(baris)
-        ditambah, _, _ = impor_lembar(self.lembar, self.kasus, KB)
-        self.assertEqual(ditambah, [baris[0]["kode"]])
+        ditambah, _, _ = impor_lembar(self.lembar, self.kasus, KB, awalan="X")
+        self.assertEqual(ditambah, ["X-" + baris[0]["kode"]])
 
     def test_impor_kolom_hilang_tidak_diam(self):
         with open(self.lembar, "w", encoding="utf-8") as f:
@@ -119,6 +119,34 @@ class TestLembarPakar(unittest.TestCase):
         buat_lembar(KB, self.folder)
         self.isi_lembar({"K03": {"diagnosis_pakar": "P01", "gejala": "G99=0.8"}})
         with self.assertRaisesRegex(ValueError, "K03"):
+            impor_lembar(self.lembar, self.kasus, KB, awalan="X")
+
+    def test_dua_pakar_mengisi_lembar_yang_sama(self):
+        buat_lembar(KB, self.folder)
+        self.isi_lembar({"K01": {"diagnosis_pakar": "P01", "nama_pakar": "Budi Santoso"}})
+        self.assertEqual(impor_lembar(self.lembar, self.kasus, KB)[0], ["BS-K01"])
+        self.isi_lembar({"K01": {"diagnosis_pakar": "P02", "nama_pakar": "Ani Rahma"}})
+        self.assertEqual(impor_lembar(self.lembar, self.kasus, KB)[0], ["AR-K01"])
+        diagnosis = {b["kode"]: b["diagnosis_pakar"] for b in baca_csv(self.kasus)}
+        self.assertEqual(diagnosis, {"BS-K01": "P01", "AR-K01": "P02"})
+
+    def test_awalan_bentrok_dan_nama_kosong(self):
+        buat_lembar(KB, self.folder)
+        self.isi_lembar({"K01": {"diagnosis_pakar": "P01", "nama_pakar": "Budi Santoso"}})
+        impor_lembar(self.lembar, self.kasus, KB)
+        self.isi_lembar({"K01": {"nama_pakar": "Bambang Sutrisno"}})     # inisial juga BS
+        with self.assertRaisesRegex(ValueError, "sudah dipakai pakar lain"):
+            impor_lembar(self.lembar, self.kasus, KB)
+        self.assertEqual(impor_lembar(self.lembar, self.kasus, KB, awalan="BSU")[0], ["BSU-K01"])
+        self.isi_lembar({"K01": {"nama_pakar": ""}})
+        with self.assertRaisesRegex(ValueError, "nama_pakar belum diisi"):
+            impor_lembar(self.lembar, self.kasus, KB)
+
+    def test_bukan_csv_utf8(self):
+        # .xlsx atau "CSV (Comma delimited)" lama dari Excel
+        with open(self.lembar, "w", encoding="cp1252") as f:
+            f.write("kode,gejala,diagnosis_pakar,catatan\nK01,G01=0.8,P01,café\n")
+        with self.assertRaisesRegex(ValueError, "bukan CSV UTF-8"):
             impor_lembar(self.lembar, self.kasus, KB)
 
 

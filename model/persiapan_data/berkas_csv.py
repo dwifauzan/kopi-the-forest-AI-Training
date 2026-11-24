@@ -5,21 +5,36 @@ dan Google Sheets terbaca sama.
 """
 
 import csv
+import io
 import json
 import os
 
 
-def pemisah_csv(path):
+def baca_teks(path):
+    """Baca isi file sebagai UTF-8 (BOM dari Excel dibuang).
+
+    Error:
+        ValueError berbahasa Indonesia kalau file bukan CSV UTF-8, misalnya .xlsx atau
+        "CSV (Comma delimited)" lama dari Excel.
+    """
+    try:
+        with open(path, encoding="utf-8-sig", newline="") as f:
+            return f.read()
+    except UnicodeDecodeError:
+        raise ValueError(f"{path}: file bukan CSV UTF-8. Di Excel pilih Save As -> "
+                         "'CSV UTF-8 (Comma delimited)'; di Google Sheets pilih Download -> CSV.") from None
+
+
+def pemisah_csv(teks):
     """Tebak pemisah kolom dari baris header: ";" (Excel berbahasa Indonesia) atau "," (lainnya)."""
-    with open(path, encoding="utf-8-sig", newline="") as f:
-        header = f.readline()
+    header = teks.split("\n", 1)[0]
     return ";" if header.count(";") > header.count(",") else ","
 
 
 def kolom_csv(path):
     """Nama kolom (header) file CSV. File kosong -> []."""
-    with open(path, encoding="utf-8-sig", newline="") as f:
-        return next(csv.reader(f, delimiter=pemisah_csv(path)), [])
+    teks = baca_teks(path)
+    return next(csv.reader(io.StringIO(teks), delimiter=pemisah_csv(teks)), [])
 
 
 def baca_csv(path):
@@ -27,8 +42,8 @@ def baca_csv(path):
 
     Aman untuk file dari Excel: BOM dibuang, dan pemisah ";" dikenali otomatis.
     """
-    with open(path, encoding="utf-8-sig", newline="") as f:
-        return list(csv.DictReader(f, delimiter=pemisah_csv(path)))
+    teks = baca_teks(path)
+    return list(csv.DictReader(io.StringIO(teks), delimiter=pemisah_csv(teks)))
 
 
 def tulis_csv(path, kolom, baris):

@@ -71,7 +71,7 @@ Diagnosis pada kasus uji harus dari pakar. Program hanya menyusun pertanyaannya.
    - `lembar_pakar.csv` + `PETUNJUK.md`: **berikan ke pakar**. Isinya 39 kombinasi gejala yang disusun dari basis pengetahuan, dengan urutan acak, kolom diagnosis kosong, dan tanpa hasil sistem.
    - `kunci_internal.csv`: **jangan diberikan ke pakar**. Berisi asal tiap kasus (khas, sebagian, lemah, negatif, gabungan, campuran, acak), untuk analisis di laporan.
 2. Pakar mengisi `diagnosis_pakar` (kode P.., `-`, atau nama penyakit lain), `catatan`, dan identitas di baris pertama. Lembar bisa dibuka di Excel atau Google Sheets; simpan kembali sebagai CSV.
-3. `python main.py impor-pakar [path_lembar.csv]` menyalin baris yang sudah diisi ke `data/kasus_uji.csv`. Impor ulang aman (kode yang sudah ada dilewati).
+3. `python main.py impor-pakar [path_lembar.csv]` menyalin baris yang sudah diisi ke `data/kasus_uji.csv`. Kode kasus diberi awalan inisial pakar (`K01` → `BS-K01` untuk Budi Santoso), jadi lembar yang sama bisa diisi beberapa pakar. Kalau inisial dua pakar sama, pakai `--awalan`. Impor ulang aman (kode yang sudah ada dilewati). Lembar harus disimpan sebagai **CSV UTF-8**, bukan `.xlsx`.
 4. `python main.py evaluasi` menghitung akurasi CF dan DS terhadap diagnosis pakar.
 
 `python main.py lembar` menolak menimpa lembar yang sudah mulai diisi; pakai `--timpa` hanya kalau memang ingin membuat ulang.

@@ -23,7 +23,7 @@ Jenis kasus (dibentuk otomatis dari isi basis pengetahuan, jadi ikut berubah kal
 Kasus dengan gejala yang sama persis hanya dimasukkan sekali.
 
     python main.py lembar [--timpa]
-    python main.py impor-pakar data/lembar_pakar/lembar_pakar.csv
+    python main.py impor-pakar data/lembar_pakar/lembar_pakar.csv [--awalan BS]
 """
 
 import csv
@@ -231,12 +231,22 @@ def buat_lembar(kb=None, folder=FOLDER_LEMBAR, seed=SEED, timpa=False):
 # Impor hasil pakar
 # ---------------------------------------------------------------------------
 
-def impor_lembar(path_lembar, path_kasus=KASUS_UJI, kb=None):
+def awalan_pakar(nama):
+    """Awalan kode kasus dari nama pakar: huruf pertama setiap kata, misalnya "Budi Santoso" -> "BS"."""
+    return "".join(k[0] for k in nama.split() if k[:1].isalnum()).upper()
+
+
+def impor_lembar(path_lembar, path_kasus=KASUS_UJI, kb=None, awalan=None):
     """Salin baris lembar yang sudah diisi pakar ke file kasus uji.
 
+    - Kode kasus diberi awalan pakar, misalnya K01 -> BS-K01. Jadi lembar yang sama bisa diisi
+      beberapa pakar, dan tidak bentrok dengan kasus K.. yang diisi langsung dari sheet.
     - Baris dengan diagnosis_pakar kosong dilewati.
-    - Baris yang kodenya sudah ada di file kasus dilewati (impor ulang aman).
+    - Baris yang kodenya (dengan awalan) sudah ada di file kasus dilewati (impor ulang aman).
     - nama_pakar, tanggal, dan lokasi yang kosong diisi dari baris pertama yang mengisinya.
+
+    Parameter:
+        awalan: awalan kode. Kosong = dari nama pakar (awalan_pakar()).
 
     Mengembalikan:
         (ditambah, dilewati, peringatan)
@@ -245,8 +255,9 @@ def impor_lembar(path_lembar, path_kasus=KASUS_UJI, kb=None):
         - peringatan: list pesan (misalnya nama pakar kosong)
 
     Error:
-        ValueError kalau kolom wajib lembar tidak ada (misalnya file tersimpan dengan format lain),
-        atau kolom gejala rusak/berisi kode gejala tidak dikenal (pesan menyebut kode kasus).
+        ValueError kalau file bukan CSV UTF-8, kolom wajib lembar tidak ada, nama pakar dan awalan
+        sama-sama kosong, awalan sudah dipakai pakar lain, atau kolom gejala rusak/berisi kode
+        gejala tidak dikenal (pesan menyebut kode kasus).
     """
     kb = kb or muat_kb()
     hilang = [k for k in KOLOM_WAJIB_LEMBAR if k not in kolom_csv(path_lembar)]
@@ -262,10 +273,20 @@ def impor_lembar(path_lembar, path_kasus=KASUS_UJI, kb=None):
 
     bawaan = {k: next((b[k].strip() for b in lembar if (b.get(k) or "").strip()), "")
               for k in ("nama_pakar", "tanggal", "lokasi")}
+    awalan = (awalan or awalan_pakar(bawaan["nama_pakar"])).strip().upper()
+    if not awalan:
+        raise ValueError("nama_pakar belum diisi. Isi nama pakar di baris pertama lembar, "
+                         "atau beri awalan kode dengan --awalan.")
+    pemilik = {b["kode"].split("-", 1)[0]: b.get("nama_pakar", "") for b in lama if "-" in b["kode"]}
+    if pemilik.get(awalan, bawaan["nama_pakar"]) != bawaan["nama_pakar"]:
+        raise ValueError(f"Awalan {awalan} sudah dipakai pakar lain ({pemilik[awalan]}). "
+                         "Pilih awalan lain dengan --awalan.")
 
     ditambah, dilewati, baru = [], [], []
     for b in lembar:
         kode = (b.get("kode") or "").strip()
+        if kode:
+            kode = f"{awalan}-{kode}"
         diagnosis = (b.get("diagnosis_pakar") or "").strip()
         if not kode:
             continue
@@ -294,7 +315,8 @@ def impor_lembar(path_lembar, path_kasus=KASUS_UJI, kb=None):
 
     peringatan = []
     if ditambah and not bawaan["nama_pakar"]:
-        peringatan.append("nama_pakar kosong; isi supaya sumber kasus bisa dipertanggungjawabkan")
+        peringatan.append(f"nama_pakar kosong (kasus disimpan dengan awalan {awalan}); "
+                          "isi supaya sumber kasus bisa dipertanggungjawabkan")
     if ditambah:
         tulis_csv(path_kasus, kolom, [{k: b.get(k, "") for k in kolom} for b in lama] + baru)
     return ditambah, dilewati, peringatan
