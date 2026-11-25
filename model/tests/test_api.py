@@ -70,6 +70,7 @@ class TestApi(unittest.TestCase):
             ({"gejala": {"G01": True}}, "harus angka"),
             ({"gejala": {"G01": None}}, "harus angka"),
             ({"gejala": {"G01": 1.5}}, "di antara 0 dan 1"),
+            ({"gejala": {"G01": -0.5}}, "di antara 0 dan 1"),
             ({"gejala": {"G01": 0.8}, "metode": "ml"}, "Metode tidak dikenal"),
         ]
         for body, pesan in kasus:

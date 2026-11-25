@@ -75,7 +75,7 @@ def ambil_gejala(body):
     if not isinstance(gejala, dict):
         raise ErrorApi(400, 'Kolom "gejala" wajib berupa objek, contoh: {"gejala": {"G01": 0.8}}')
     try:
-        ada = any(float(v) > 0 for v in gejala.values())
+        ada = any(float(v) != 0 for v in gejala.values())
     except (TypeError, ValueError):
         ada = True   # biarkan periksa_masukan() memberi pesan yang menyebut kode gejalanya
     if not ada:
