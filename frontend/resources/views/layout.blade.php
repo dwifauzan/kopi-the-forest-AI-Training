@@ -12,5 +12,5 @@
 <body>
 <nav class="nav"><a href="{{ route('home') }}" class="brand">Kopi The Forest<small>Kenali · Rawat · Lestarikan</small></a><div class="links"><a href="{{ route('home') }}">Beranda</a><a href="{{ route('diagnosis.form') }}">Diagnosis</a><a href="{{ route('history') }}">Riwayat</a></div></nav>
 @yield('content')
-<footer class="footer">© {{ date('Y') }} Kopi The Forest · Sistem Pakar Diagnosis Penyakit Tanaman Kopi</footer>
+<footer class="footer" style="position: static; bottom: 0; width: 100%;">© {{ date('Y') }} Kopi The Forest · Sistem Pakar Diagnosis Penyakit Tanaman Kopi</footer>
 </body></html>
